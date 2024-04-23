@@ -1,6 +1,7 @@
 #include <Arduino.h>
 
 #define E32_TTL_1W
+#define FREQUENCY_433
 
 #include <LoRa_E32.h>
 
@@ -36,9 +37,6 @@ void setsMainOpt(){
     conf.SPED.uartBaudRate = UART_BPS_9600;
     conf.SPED.uartParity = MODE_00_8N1;
 
-    
-
-
-
-
+    ResponseStatus rs = e32ttl1w.setConfiguration(conf, WRITE_CFG_PWR_DWN_LOSE);
+    ayar.close();
 }
