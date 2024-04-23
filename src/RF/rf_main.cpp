@@ -11,8 +11,9 @@ void rfInit();
 LoRa_E32 e32ttl1w(&Serial2);
 
 void rfInit(){
-    
     e32ttl1w.begin();
+
+    setsMainOpt();
 }
 
 void setsMainOpt(){
