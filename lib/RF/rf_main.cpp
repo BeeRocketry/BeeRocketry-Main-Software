@@ -71,6 +71,20 @@ void printParameters(struct Configuration conf){
 }
 
 void sendMessage(String message){
+    struct Message
+    {
+        float altitude;
+        float gpsAltitude;
+        float gpsEnlem;
+        float gpsBoylam;
+        float gyroX;
+        float gyroY;
+        float gyroZ;
+        float accX;
+        float accY;
+        float accZ;
+    };
+    
     ResponseStatus mes = e32ttl1w.sendMessage(message);
 }
 
