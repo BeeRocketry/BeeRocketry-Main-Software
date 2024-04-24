@@ -6,10 +6,13 @@
 
 #include <LoRa_E32.h>
 
+#define AUX_PIN 1
+
 void setsMainOpt();
 void rfInit();
 
-LoRa_E32 e32ttl1w(&Serial2);
+HardwareSerial UART2(PA3, PA2);
+LoRa_E32 e32ttl1w(&UART2, AUX_PIN);
 
 void rfInit(){
     e32ttl1w.begin();
@@ -26,8 +29,8 @@ void setsMainOpt(){
     Configuration conf = *(Configuration*) ayar.data;
 
     conf.ADDL = 0x0;
-    conf.ADDH = 0x1;
-    conf.CHAN = 0x19;
+    conf.ADDH = 0x6;
+    conf.CHAN = 0x759;
 
     conf.OPTION.fec = FEC_1_ON;
     conf.OPTION.fixedTransmission = FT_TRANSPARENT_TRANSMISSION;
@@ -39,6 +42,38 @@ void setsMainOpt(){
     conf.SPED.uartBaudRate = UART_BPS_9600;
     conf.SPED.uartParity = MODE_00_8N1;
 
-    ResponseStatus rs = e32ttl1w.setConfiguration(conf, WRITE_CFG_PWR_DWN_LOSE);
+    ResponseStatus rs = e32ttl1w.setConfiguration(conf, WRITE_CFG_PWR_DWN_SAVE);
+
+    printParameters(conf);
     ayar.close();
+}
+
+void printParameters(struct Configuration conf){
+    Serial.println("----------------------------------------");
+
+    Serial.print(F("HEAD : "));  Serial.print(conf.HEAD, BIN);Serial.print(" ");Serial.print(conf.HEAD, DEC);Serial.print(" ");Serial.println(conf.HEAD, HEX);
+    Serial.println(F(" "));
+    Serial.print(F("AddH : "));  Serial.println(conf.ADDH, BIN);
+    Serial.print(F("AddL : "));  Serial.println(conf.ADDL, BIN);
+    Serial.print(F("Chan : "));  Serial.print(conf.CHAN, DEC); Serial.print(" -> "); Serial.println(conf.getChannelDescription());
+    Serial.println(F(" "));
+    Serial.print(F("SpeedParityBit     : "));  Serial.print(conf.SPED.uartParity, BIN);Serial.print(" -> "); Serial.println(conf.SPED.getUARTParityDescription());
+    Serial.print(F("SpeedUARTDatte  : "));  Serial.print(conf.SPED.uartBaudRate, BIN);Serial.print(" -> "); Serial.println(conf.SPED.getUARTBaudRate());
+    Serial.print(F("SpeedAirDataRate   : "));  Serial.print(conf.SPED.airDataRate, BIN);Serial.print(" -> "); Serial.println(conf.SPED.getAirDataRate());
+ 
+    Serial.print(F("OptionTrans        : "));  Serial.print(conf.OPTION.fixedTransmission, BIN);Serial.print(" -> "); Serial.println(conf.OPTION.getFixedTransmissionDescription());
+    Serial.print(F("OptionPullup       : "));  Serial.print(conf.OPTION.ioDriveMode, BIN);Serial.print(" -> "); Serial.println(conf.OPTION.getIODroveModeDescription());
+    Serial.print(F("OptionWakeup       : "));  Serial.print(conf.OPTION.wirelessWakeupTime, BIN);Serial.print(" -> "); Serial.println(conf.OPTION.getWirelessWakeUPTimeDescription());
+    Serial.print(F("OptionFEC          : "));  Serial.print(conf.OPTION.fec, BIN);Serial.print(" -> "); Serial.println(conf.OPTION.getFECDescription());
+    Serial.print(F("OptionPower        : "));  Serial.print(conf.OPTION.transmissionPower, BIN);Serial.print(" -> "); Serial.println(conf.OPTION.getTransmissionPowerDescription());
+ 
+    Serial.println("----------------------------------------");
+}
+
+void sendMessage(String message){
+    ResponseStatus mes = e32ttl1w.sendMessage(message);
+}
+
+void sendFixedMessage(String message, int highadr, int lowadr, int chan){
+    ResponseStatus mes = e32ttl1w.sendFixedMessage(highadr, lowadr, chan, message);
 }
