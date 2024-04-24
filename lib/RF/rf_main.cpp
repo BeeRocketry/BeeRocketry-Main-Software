@@ -8,8 +8,8 @@
 
 #define AUX_PIN 1
 
-void setsMainOpt();
-void rfInit();
+void setsMainOpt(void);
+void rfInit(void);
 
 HardwareSerial UART2(PA3, PA2);
 LoRa_E32 e32ttl1w(&UART2, AUX_PIN);
