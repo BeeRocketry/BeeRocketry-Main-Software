@@ -49,6 +49,8 @@ void setsMainOpt(){
 }
 
 void printParameters(struct Configuration conf){
+    // Bu Fonksiyon RF modülünün tüm ayarlarını printliyor.
+
     Serial.println("----------------------------------------");
 
     Serial.print(F("HEAD : "));  Serial.print(conf.HEAD, BIN);Serial.print(" ");Serial.print(conf.HEAD, DEC);Serial.print(" ");Serial.println(conf.HEAD, HEX);
@@ -70,22 +72,24 @@ void printParameters(struct Configuration conf){
     Serial.println("----------------------------------------");
 }
 
-void sendMessage(String message){
+void sendMessage(void){
     struct Message
     {
-        float altitude;
-        float gpsAltitude;
-        float gpsEnlem;
-        float gpsBoylam;
-        float gyroX;
-        float gyroY;
-        float gyroZ;
-        float accX;
-        float accY;
-        float accZ;
-    };
+        byte altitude[4];
+        byte gpsAltitude[4];
+        byte gpsEnlem[4];
+        byte gpsBoylam[4];
+        byte gyroX[4];
+        byte gyroY[4];
+        byte gyroZ[4];
+        byte accX[4];
+        byte accY[4];
+        byte accZ[4];
+    } mes;
+
+    *(float*)mes.altitude = Yukseklik; // Örnek atama
     
-    ResponseStatus mes = e32ttl1w.sendMessage(message);
+    ResponseStatus mes = e32ttl1w.sendMessage(&mes, sizeof(mes));
 }
 
 void sendFixedMessage(String message, int highadr, int lowadr, int chan){
