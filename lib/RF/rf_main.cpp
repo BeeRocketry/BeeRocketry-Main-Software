@@ -87,7 +87,7 @@ void sendMessage(void){
         byte accZ[4];
     } mes;
 
-    *(float*)mes.altitude = Yukseklik; // Örnek atama
+    *(float*)(mes.altitude) = Yukseklik; // Örnek atama
     
     ResponseStatus mes = e32ttl1w.sendMessage(&mes, sizeof(mes));
 }
