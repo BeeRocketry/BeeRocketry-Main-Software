@@ -8,5 +8,6 @@
 void setsMainOpt(void);
 void rfInit(void);
 void sendMessage(void);
-void sendFixedMessage(String message, int highadr, int lowadr, int chan);
 void printParameters(struct Configuration conf);
+void haberlesmeTestTransmitter(void);
+void haberlesmeTestReceiver(void);

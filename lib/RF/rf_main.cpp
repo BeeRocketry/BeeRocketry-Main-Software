@@ -34,7 +34,7 @@ void setsMainOpt(){
 
     conf.ADDL = 0x0;
     conf.ADDH = 0x6;
-    conf.CHAN = 0x759;
+    conf.CHAN = 0x16;
 
     conf.OPTION.fec = FEC_1_ON;
     conf.OPTION.fixedTransmission = FT_TRANSPARENT_TRANSMISSION;
@@ -47,6 +47,7 @@ void setsMainOpt(){
     conf.SPED.uartParity = MODE_00_8N1;
 
     ResponseStatus rs = e32ttl1w.setConfiguration(conf, WRITE_CFG_PWR_DWN_SAVE);
+    Serial.println("Config: " + rs.getResponseDescription());
 
     printParameters(conf);
     ayar.close();
@@ -76,7 +77,8 @@ void printParameters(struct Configuration conf){
     Serial.println("----------------------------------------");
 }
 
-void sendMessage(void){
+/* void sendMessage(void){
+    // Yarışma için
     struct Message
     {
         byte altitude[4];
@@ -92,14 +94,9 @@ void sendMessage(void){
     } mes;
     
     ResponseStatus mes = e32ttl1w.sendMessage(&mes, sizeof(mes));
-}
-
-void sendFixedMessage(String message, int highadr, int lowadr, int chan){
-    ResponseStatus mes = e32ttl1w.sendFixedMessage(highadr, lowadr, chan, message);
-}
+} */
 
 void haberlesmeTestTransmitter(void){
-    delay(1000);
     counter++;
     Serial.println("Sending Message...");
     String mes = String(counter + ". Message");
@@ -119,6 +116,8 @@ void haberlesmeTestTransmitter(void){
         Serial.println("Message: " + mes);
         Serial.println(rc.status.getResponseDescription());
     }
+
+    delay(1000);
 }
 
 void haberlesmeTestReceiver(void){
@@ -131,7 +130,7 @@ void haberlesmeTestReceiver(void){
         Serial.println(mes);
         Serial.println(rc.status.getResponseDescription());
 
-        ResponseStatus rs = e32ttl1w.sendMessage("We have received the message.. Your Message was " + mes);
+        ResponseStatus rs = e32ttl1w.sendMessage("We have received the message.. Your Message was: " + mes);
 
         Serial.println(rs.getResponseDescription());
 
