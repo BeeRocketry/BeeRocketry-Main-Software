@@ -20,6 +20,8 @@ void rfInit(){
     e32ttl1w.begin();
 
     setsMainOpt();
+
+    e32ttl1w.setMode(MODE_0_NORMAL);
 }
 
 void setsMainOpt(){
@@ -97,19 +99,42 @@ void sendFixedMessage(String message, int highadr, int lowadr, int chan){
 }
 
 void haberlesmeTestTransmitter(void){
-  delay(1000);
-  counter++;
-  Serial.println("Sending Message...");
-  String mes = String(counter + ". Message");
-  ResponseStatus rs = e32ttl1w.sendMessage(mes);
+    delay(1000);
+    counter++;
+    Serial.println("Sending Message...");
+    String mes = String(counter + ". Message");
+    ResponseStatus rs = e32ttl1w.sendMessage(mes);
+    Serial.println(rs.getResponseDescription());
+
+    while(!e32ttl1w.available()){
+        delay(100);
+    }
+
+    if(e32ttl1w.available() > 1){
+        Serial.println("Message Arrived...");
+        ResponseContainer rc = e32ttl1w.receiveMessage();
+
+        String mes = rc.data;
+
+        Serial.println("Message: " + mes);
+        Serial.println(rc.status.getResponseDescription());
+    }
 }
 
-void haberlesmeTestTransmitter(void){
+void haberlesmeTestReceiver(void){
     if(e32ttl1w.available() > 1){
-        ResponseContainer rs = e32ttl1w.receiveMessage();
+        Serial.println("Message arrived...");
+        ResponseContainer rc = e32ttl1w.receiveMessage();
 
-        String mes = rs.data;
+        String mes = rc.data;
 
         Serial.println(mes);
+        Serial.println(rc.status.getResponseDescription());
+
+        ResponseStatus rs = e32ttl1w.sendMessage("We have received the message.. Your Message was " + mes);
+
+        Serial.println(rs.getResponseDescription());
+
+        delay(1000);
     }
 }
