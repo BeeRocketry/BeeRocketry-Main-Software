@@ -11,6 +11,8 @@
 void setsMainOpt(void);
 void rfInit(void);
 
+int counter = 0;
+
 HardwareSerial UART2(PA3, PA2);
 LoRa_E32 e32ttl1w(&UART2, AUX_PIN);
 
@@ -86,12 +88,28 @@ void sendMessage(void){
         byte accY[4];
         byte accZ[4];
     } mes;
-
-    *(float*)(mes.altitude) = Yukseklik; // Örnek atama
     
     ResponseStatus mes = e32ttl1w.sendMessage(&mes, sizeof(mes));
 }
 
 void sendFixedMessage(String message, int highadr, int lowadr, int chan){
     ResponseStatus mes = e32ttl1w.sendFixedMessage(highadr, lowadr, chan, message);
+}
+
+void haberlesmeTestTransmitter(void){
+  delay(1000);
+  counter++;
+  Serial.println("Sending Message...");
+  String mes = String(counter + ". Message");
+  ResponseStatus rs = e32ttl1w.sendMessage(mes);
+}
+
+void haberlesmeTestTransmitter(void){
+    if(e32ttl1w.available() > 1){
+        ResponseContainer rs = e32ttl1w.receiveMessage();
+
+        String mes = rs.data;
+
+        Serial.println(mes);
+    }
 }
