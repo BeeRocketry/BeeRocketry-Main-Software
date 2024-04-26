@@ -137,3 +137,38 @@ void haberlesmeTestReceiver(void){
         delay(1000);
     }
 }
+
+void haberlesmeTransmitterAct(String action){
+    struct Message{
+        char type;
+        char mes[10];
+    }file;
+
+    file.type = 'A';
+    *(String*)file.mes = action;
+
+    ResponseStatus rs = e32ttl1w.sendMessage(&file, sizeof(file));
+    Serial.println(rs.getResponseDescription());
+}
+
+void haberlesmeReceiverAct(){
+    struct Message{
+        char type;
+        char mes[10];
+    };
+
+    if(e32ttl1w.available() > 1){
+        ResponseStructContainer rsc = e32ttl1w.receiveMessage(sizeof(Message));
+        struct Message message = *(Message*) rsc.data;
+        
+        if(message.type == 'A'){
+            
+        }
+
+        else if(message.type == 'D'){
+
+        }
+
+        free(rsc.data);
+    }
+}
