@@ -40,7 +40,7 @@ void I2CReadRegMulti(int8_t chipadr, int8_t regadr, uint8_t temp[], int length){
     int cnt = 0;
     Wire.beginTransmission(chipadr);
     Wire.write(regadr);
-    Wire.endTransmission();
+    Wire.endTransmission(false);
 
     Wire.requestFrom(chipadr, length);
 
