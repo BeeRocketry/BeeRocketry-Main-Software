@@ -12,23 +12,39 @@ void I2Cinit(void){
     Wire.setSDA(I2C2_SDA);
     Wire.setSCL(I2C2_SCL);
     Wire.begin();
+    Wire.setClock(400000);
 }
 
-void I2CWriteReg(int8_t chipadr, int8_t regadr, int8_t data){
+int8_t I2CWriteReg(int8_t chipadr, int8_t regadr, int8_t data){
+    byte result;
     Wire.beginTransmission(chipadr);
     Wire.write(regadr);
     Wire.write(data);
-    Wire.endTransmission();
+    result = Wire.endTransmission();
+    return result;
 }
 
-void I2CReadReg(int8_t chipadr, int8_t regadr, byte *temp){
+void I2CReadReg(int8_t chipadr, int8_t regadr, double *temp){
     Wire.beginTransmission(chipadr);
     Wire.write(regadr);
     Wire.endTransmission();
 
     Wire.requestFrom(chipadr, 1);
 
-    if(Wire.available() <= 1){
+    if(Wire.available()){
         *temp = Wire.read();
+    }
+}
+
+void I2CReadRegMulti(int8_t chipadr, int8_t regadr, uint8_t temp[], int length){
+    int cnt = 0;
+    Wire.beginTransmission(chipadr);
+    Wire.write(regadr);
+    Wire.endTransmission();
+
+    Wire.requestFrom(chipadr, length);
+
+    if(Wire.available()){
+        temp[cnt++] = Wire.read();
     }
 }
