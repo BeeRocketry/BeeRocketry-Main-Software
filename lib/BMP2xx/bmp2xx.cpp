@@ -108,6 +108,29 @@ uint32_t getCompensatedPres(int32_t rawData, int32_t tfine){
 }
 
 void getPresCalb(int32_t *P1, int32_t *P2, int32_t *P3, int32_t *P4, int32_t *P5, int32_t *P6, int32_t *P7, int32_t *P8, int32_t *P9){
+    uint8_t buff[18];
+
+    I2CReadRegMulti(CHIP_ADR, REG_P1_LSB, buff, 18);
+   
+    for(int i = 0; i < 9; i++){
+        int32_t value = 0;
+        value = (buff[i * 2 + 1] << 8) | buff[i * 2];
+        switch (i)
+        {
+            case 0: *P1 = value; break;
+            case 1: *P2 = value; break;
+            case 2: *P3 = value; break;
+            case 3: *P4 = value; break;
+            case 4: *P5 = value; break;
+            case 5: *P6 = value; break;
+            case 6: *P7 = value; break;
+            case 7: *P8 = value; break;
+            case 8: *P9 = value; break;
+        }
+    }
+}
+
+/* void getPresCalb(int32_t *P1, int32_t *P2, int32_t *P3, int32_t *P4, int32_t *P5, int32_t *P6, int32_t *P7, int32_t *P8, int32_t *P9){
     int32_t buff[2];
    
     I2CReadReg(CHIP_ADR, REG_P1_LSB, buff);
@@ -145,4 +168,4 @@ void getPresCalb(int32_t *P1, int32_t *P2, int32_t *P3, int32_t *P4, int32_t *P5
     I2CReadReg(CHIP_ADR, REG_P3_LSB, buff);
     I2CReadReg(CHIP_ADR, REG_P3_MSB, &buff[1]);
     *P9 = (buff[1] << 8) | buff[0];
-}
+} */

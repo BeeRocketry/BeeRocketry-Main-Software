@@ -44,7 +44,7 @@ void I2CReadRegMulti(int8_t chipadr, int8_t regadr, uint8_t temp[], int length){
 
     Wire.requestFrom(chipadr, length);
 
-    if(Wire.available()){
+    while(Wire.available() < length && cnt < length){
         temp[cnt++] = Wire.read();
     }
 }
