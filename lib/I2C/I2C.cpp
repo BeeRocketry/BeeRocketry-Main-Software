@@ -24,7 +24,7 @@ int8_t I2CWriteReg(int8_t chipadr, int8_t regadr, int8_t data){
     return result;
 }
 
-void I2CReadReg(int8_t chipadr, int8_t regadr, double *temp){
+void I2CReadReg(int8_t chipadr, int8_t regadr, int32_t *temp){
     Wire.beginTransmission(chipadr);
     Wire.write(regadr);
     Wire.endTransmission();
