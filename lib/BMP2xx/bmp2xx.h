@@ -47,3 +47,9 @@
 void bmpInit(void);
 void setCtrlReg(byte oversamplingTemp, byte oversamplingPressure, byte powerMode);
 void setConfig(byte tStandby, byte filterSet, byte spi3w);
+int32_t getRawTemp(void);
+int32_t getCompensatedTemp(int32_t rawData, int32_t *tfine);
+void getTempCalb(int32_t *T1, int32_t *T2, int32_t *T3);
+int32_t getRawPres(void);
+uint32_t getCompensatedPres(int32_t rawData, int32_t tfine);
+void getPresCalb(int32_t *P1, int32_t *P2, int32_t *P3, int32_t *P4, int32_t *P5, int32_t *P6, int32_t *P7, int32_t *P8, int32_t *P9);
