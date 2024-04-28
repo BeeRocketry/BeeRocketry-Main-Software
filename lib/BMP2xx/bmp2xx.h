@@ -43,3 +43,7 @@
 #define REG_P8_MSB 0x9D
 #define REG_P9_LSB 0x9E // signed short
 #define REG_P9_MSB 0x9F
+
+void bmpInit(void);
+void setCtrlReg(byte oversamplingTemp, byte oversamplingPressure, byte powerMode);
+void setConfig(byte tStandby, byte filterSet, byte spi3w);
