@@ -1,6 +1,8 @@
 #include <Arduino.h>
 #include "I2C.h"
 
+#define chipadr 0x00
+
 #define WHOAMI 0x75
 
 #define CONFIG 0x1A

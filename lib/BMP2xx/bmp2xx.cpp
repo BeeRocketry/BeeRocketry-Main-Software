@@ -8,13 +8,13 @@ void bmpInit(void){
 void setCtrlReg(byte oversamplingTemp, byte oversamplingPressure, byte powerMode){
     byte temp = 0;
     temp = (oversamplingTemp << 5) | (oversamplingPressure << 2) | powerMode;
-    I2CWriteReg(CHIP_ADR, REG_CTRL_MEAS, temp);
+    I2CWriteByte(CHIP_ADR, REG_CTRL_MEAS, temp);
 }
 
 void setConfig(byte tStandby, byte filterSet, byte spi3w){
     byte temp = 0;
     temp = (tStandby << 5) | (filterSet << 2) | spi3w;
-    I2CWriteReg(CHIP_ADR, REG_CONFIG, temp);
+    I2CWriteByte(CHIP_ADR, REG_CONFIG, temp);
 }
 
 int32_t getRawTemp(void){
@@ -54,24 +54,24 @@ int32_t getCompensatedTemp(int32_t rawData, int32_t *tfine){
 void getTempCalb(int32_t *T1, int32_t *T2, int32_t *T3){
     uint8_t buff[2];
 
-    I2CReadReg(CHIP_ADR, REG_T1_LSB, buff, TIMEOUT_I2C);
-    I2CReadReg(CHIP_ADR, REG_T1_MSB, &buff[1], TIMEOUT_I2C);
+    I2CReadByte(CHIP_ADR, REG_T1_LSB, buff, TIMEOUT_I2C);
+    I2CReadByte(CHIP_ADR, REG_T1_MSB, &buff[1], TIMEOUT_I2C);
     *T1 = (buff[1] << 8) | buff[0];
 
-    I2CReadReg(CHIP_ADR, REG_T2_LSB, buff, TIMEOUT_I2C);
-    I2CReadReg(CHIP_ADR, REG_T2_MSB, &buff[1], TIMEOUT_I2C);
+    I2CReadByte(CHIP_ADR, REG_T2_LSB, buff, TIMEOUT_I2C);
+    I2CReadByte(CHIP_ADR, REG_T2_MSB, &buff[1], TIMEOUT_I2C);
     *T2 = (buff[1] << 8) | buff[0];
 
-    I2CReadReg(CHIP_ADR, REG_T3_LSB, buff, TIMEOUT_I2C);
-    I2CReadReg(CHIP_ADR, REG_T3_MSB, &buff[1], TIMEOUT_I2C);
+    I2CReadByte(CHIP_ADR, REG_T3_LSB, buff, TIMEOUT_I2C);
+    I2CReadByte(CHIP_ADR, REG_T3_MSB, &buff[1], TIMEOUT_I2C);
     *T3 = (buff[1] << 8) | buff[0];
 }
 
 int32_t getRawPres(void){
     uint8_t temporary[3];
-    I2CReadReg(CHIP_ADR, REG_PRESS_LSB, &temporary[1], TIMEOUT_I2C);
-    I2CReadReg(CHIP_ADR, REG_PRESS_MSB, &temporary[2], TIMEOUT_I2C);
-    I2CReadReg(CHIP_ADR, REG_PRESS_XLSB, &temporary[0], TIMEOUT_I2C);
+    I2CReadByte(CHIP_ADR, REG_PRESS_LSB, &temporary[1], TIMEOUT_I2C);
+    I2CReadByte(CHIP_ADR, REG_PRESS_MSB, &temporary[2], TIMEOUT_I2C);
+    I2CReadByte(CHIP_ADR, REG_PRESS_XLSB, &temporary[0], TIMEOUT_I2C);
 
     int32_t press = 0;
     press = (temporary[2] << 12) | (temporary[1] << 3) | (temporary[2] >> 4);
@@ -117,7 +117,7 @@ uint32_t getCompensatedPres(int32_t rawData, int32_t tfine){
 void getPresCalb(int32_t *P1, int32_t *P2, int32_t *P3, int32_t *P4, int32_t *P5, int32_t *P6, int32_t *P7, int32_t *P8, int32_t *P9){
     uint8_t buff[18];
 
-    I2CReadRegMulti(CHIP_ADR, REG_P1_LSB, buff, 18, TIMEOUT_I2C);
+    I2CReadBytes(CHIP_ADR, REG_P1_LSB, buff, 18, TIMEOUT_I2C);
    
     for(int i = 0; i < 9; i++){
         int32_t value = 0;
@@ -140,39 +140,39 @@ void getPresCalb(int32_t *P1, int32_t *P2, int32_t *P3, int32_t *P4, int32_t *P5
 /* void getPresCalb(int32_t *P1, int32_t *P2, int32_t *P3, int32_t *P4, int32_t *P5, int32_t *P6, int32_t *P7, int32_t *P8, int32_t *P9){
     int32_t buff[2];
    
-    I2CReadReg(CHIP_ADR, REG_P1_LSB, buff);
-    I2CReadReg(CHIP_ADR, REG_P1_MSB, &buff[1]);
+    I2CReadByte(CHIP_ADR, REG_P1_LSB, buff);
+    I2CReadByte(CHIP_ADR, REG_P1_MSB, &buff[1]);
     *P1 = (buff[1] << 8) | buff[0];
 
-    I2CReadReg(CHIP_ADR, REG_P2_LSB, buff);
-    I2CReadReg(CHIP_ADR, REG_P2_MSB, &buff[1]);
+    I2CReadByte(CHIP_ADR, REG_P2_LSB, buff);
+    I2CReadByte(CHIP_ADR, REG_P2_MSB, &buff[1]);
     *P2 = (buff[1] << 8) | buff[0];
 
-    I2CReadReg(CHIP_ADR, REG_P3_LSB, buff);
-    I2CReadReg(CHIP_ADR, REG_P3_MSB, &buff[1]);
+    I2CReadByte(CHIP_ADR, REG_P3_LSB, buff);
+    I2CReadByte(CHIP_ADR, REG_P3_MSB, &buff[1]);
     *P3 = (buff[1] << 8) | buff[0];
 
-    I2CReadReg(CHIP_ADR, REG_P1_LSB, buff);
-    I2CReadReg(CHIP_ADR, REG_P1_MSB, &buff[1]);
+    I2CReadByte(CHIP_ADR, REG_P1_LSB, buff);
+    I2CReadByte(CHIP_ADR, REG_P1_MSB, &buff[1]);
     *P4 = (buff[1] << 8) | buff[0];
 
-    I2CReadReg(CHIP_ADR, REG_P2_LSB, buff);
-    I2CReadReg(CHIP_ADR, REG_P2_MSB, &buff[1]);
+    I2CReadByte(CHIP_ADR, REG_P2_LSB, buff);
+    I2CReadByte(CHIP_ADR, REG_P2_MSB, &buff[1]);
     *P5 = (buff[1] << 8) | buff[0];
 
-    I2CReadReg(CHIP_ADR, REG_P3_LSB, buff);
-    I2CReadReg(CHIP_ADR, REG_P3_MSB, &buff[1]);
+    I2CReadByte(CHIP_ADR, REG_P3_LSB, buff);
+    I2CReadByte(CHIP_ADR, REG_P3_MSB, &buff[1]);
     *P6 = (buff[1] << 8) | buff[0];
 
-    I2CReadReg(CHIP_ADR, REG_P1_LSB, buff);
-    I2CReadReg(CHIP_ADR, REG_P1_MSB, &buff[1]);
+    I2CReadByte(CHIP_ADR, REG_P1_LSB, buff);
+    I2CReadByte(CHIP_ADR, REG_P1_MSB, &buff[1]);
     *P7 = (buff[1] << 8) | buff[0];
 
-    I2CReadReg(CHIP_ADR, REG_P2_LSB, buff);
-    I2CReadReg(CHIP_ADR, REG_P2_MSB, &buff[1]);
+    I2CReadByte(CHIP_ADR, REG_P2_LSB, buff);
+    I2CReadByte(CHIP_ADR, REG_P2_MSB, &buff[1]);
     *P8 = (buff[1] << 8) | buff[0];
 
-    I2CReadReg(CHIP_ADR, REG_P3_LSB, buff);
-    I2CReadReg(CHIP_ADR, REG_P3_MSB, &buff[1]);
+    I2CReadByte(CHIP_ADR, REG_P3_LSB, buff);
+    I2CReadByte(CHIP_ADR, REG_P3_MSB, &buff[1]);
     *P9 = (buff[1] << 8) | buff[0];
 } */

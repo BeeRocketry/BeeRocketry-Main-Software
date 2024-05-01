@@ -15,8 +15,9 @@ void I2Cinit(void){
     Wire.setClock(400000);
 }
 
-int8_t I2CWriteReg(int8_t chipadr, int8_t regadr, int8_t data){
-    byte result;
+int8_t I2CWriteByte(int8_t chipadr, int8_t regadr, int8_t data){
+    int8_t result;
+    
     Wire.beginTransmission(chipadr);
     Wire.write(regadr);
     Wire.write(data);
@@ -24,7 +25,7 @@ int8_t I2CWriteReg(int8_t chipadr, int8_t regadr, int8_t data){
     return result;
 }
 
-int8_t I2CReadReg(uint8_t chipadr, uint8_t regadr, uint8_t *temp, uint16_t timeout){
+int8_t I2CReadByte(uint8_t chipadr, uint8_t regadr, uint8_t *temp, uint16_t timeout){
     int8_t cnt = 0;
     uint8_t length = 1;
     uint32_t t1 = millis();
@@ -49,7 +50,7 @@ int8_t I2CReadReg(uint8_t chipadr, uint8_t regadr, uint8_t *temp, uint16_t timeo
     return cnt;
 }
 
-int8_t I2CReadRegMulti(uint8_t chipadr, uint8_t regadr, uint8_t *temp, uint8_t length, uint16_t timeout){
+int8_t I2CReadBytes(uint8_t chipadr, uint8_t regadr, uint8_t *temp, uint8_t length, uint16_t timeout){
     int8_t cnt = 0;
     uint32_t t1 = millis();
     Wire.beginTransmission(chipadr);
