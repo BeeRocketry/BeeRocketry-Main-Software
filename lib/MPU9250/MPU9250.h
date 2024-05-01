@@ -1,7 +1,8 @@
 #include <Arduino.h>
 #include "I2C.h"
 
-#define chipadr 0x00
+#define MPU_CHIPADR 0x00
+#define MAG_CHIPADR 0x0C
 
 #define WHOAMI 0x75
 
@@ -16,6 +17,7 @@
 #define MAG_STATUS_2 0x9H
 #define MAG_CTRL 0xAH
 #define SAMPLERATE_DIVIDER 0x19
+#define INT_PIN_CFG 0x37
 
 #define GYRO_X_OFFSET_MSB 0x13
 #define GYRO_X_OFFSET_LSB 0x14
@@ -48,9 +50,15 @@
 #define GYRO_Z_OUTPUT_MSB 0x47
 #define GYRO_Z_OUTPUT_LSB 0x48
 
-#define MAG_X_OUTPUT_LSB 0x3H
-#define MAG_X_OUTPUT_MSB 0x4H
-#define MAG_Y_OUTPUT_LSB 0x5H
-#define MAG_Y_OUTPUT_MSB 0x6H
-#define MAG_Z_OUTPUT_LSB 0x7H
-#define MAG_Z_OUTPUT_MSB 0x8H
+#define MAG_X_OUTPUT_LSB 0x03
+#define MAG_X_OUTPUT_MSB 0x04
+#define MAG_Y_OUTPUT_LSB 0x05
+#define MAG_Y_OUTPUT_MSB 0x06
+#define MAG_Z_OUTPUT_LSB 0x07
+#define MAG_Z_OUTPUT_MSB 0x08
+
+void mpuInit(void);
+void setGyroRange(uint8_t range);
+void setAccelRange(uint8_t range);
+void setSleep(bool cond);
+void setClock(uint8_t bits);

@@ -15,14 +15,14 @@ void I2Cinit(void){
     Wire.setClock(400000);
 }
 
-int8_t I2CWriteByte(int8_t chipadr, int8_t regadr, int8_t data){
+bool I2CWriteByte(int8_t chipadr, int8_t regadr, int8_t data){
     int8_t result;
-    
+
     Wire.beginTransmission(chipadr);
     Wire.write(regadr);
     Wire.write(data);
     result = Wire.endTransmission();
-    return result;
+    return result == 0;
 }
 
 int8_t I2CReadByte(uint8_t chipadr, uint8_t regadr, uint8_t *temp, uint16_t timeout){
