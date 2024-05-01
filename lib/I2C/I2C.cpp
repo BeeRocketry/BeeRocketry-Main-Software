@@ -5,8 +5,8 @@
 
 #include <Wire.h>
 
-#define I2C2_SDA PB11
-#define I2C2_SCL PB12
+#define I2C2_SDA PB7
+#define I2C2_SCL PB6
 
 void I2Cinit(void){
     Wire.setSDA(I2C2_SDA);
@@ -24,27 +24,50 @@ int8_t I2CWriteReg(int8_t chipadr, int8_t regadr, int8_t data){
     return result;
 }
 
-void I2CReadReg(int8_t chipadr, int8_t regadr, int32_t *temp){
+int8_t I2CReadReg(uint8_t chipadr, uint8_t regadr, uint8_t *temp, uint16_t timeout){
+    int8_t cnt = 0;
+    uint8_t length = 1;
+    uint32_t t1 = millis();
     Wire.beginTransmission(chipadr);
     Wire.write(regadr);
     Wire.endTransmission();
 
+    Wire.beginTransmission(chipadr);
     Wire.requestFrom(chipadr, 1);
 
-    if(Wire.available()){
+    while(Wire.available() && (timeout == 0 || millis() - t1 < timeout)){
         *temp = Wire.read();
+        cnt++;
     }
+
+    Wire.endTransmission();
+
+    if(timeout > 0 && millis() - t1 >= timeout && cnt < length){
+        cnt = -1;
+    }
+
+    return cnt;
 }
 
-void I2CReadRegMulti(int8_t chipadr, int8_t regadr, uint8_t temp[], int length){
-    int cnt = 0;
+int8_t I2CReadRegMulti(uint8_t chipadr, uint8_t regadr, uint8_t *temp, uint8_t length, uint16_t timeout){
+    int8_t cnt = 0;
+    uint32_t t1 = millis();
     Wire.beginTransmission(chipadr);
     Wire.write(regadr);
-    Wire.endTransmission(false);
+    Wire.endTransmission();
 
+    Wire.beginTransmission(chipadr);
     Wire.requestFrom(chipadr, length);
 
-    while(Wire.available() < length && cnt < length){
+    while(Wire.available() && (timeout == 0 || millis() - t1 < timeout)){
         temp[cnt++] = Wire.read();
     }
+
+    Wire.endTransmission();
+
+    if(timeout > 0 && millis() - t1 >= timeout && cnt < length){
+        cnt = -1;
+    }
+
+    return cnt;
 }

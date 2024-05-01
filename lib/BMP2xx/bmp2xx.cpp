@@ -18,10 +18,17 @@ void setConfig(byte tStandby, byte filterSet, byte spi3w){
 }
 
 int32_t getRawTemp(void){
-    int32_t temporary[3];
-    I2CReadReg(CHIP_ADR, REG_TEMP_LSB, &temporary[1]);
-    I2CReadReg(CHIP_ADR, REG_TEMP_MSB, &temporary[2]);
-    I2CReadReg(CHIP_ADR, REG_TEMP_XLSB, &temporary[0]);
+    int i = 0;
+    int error = 5;
+    uint32_t temporary[3] = {0};
+    Wire.beginTransmission(CHIP_ADR);
+    Wire.write(0xFA);
+    error = Wire.endTransmission();
+    Wire.requestFrom(CHIP_ADR, 3);
+
+    while(Wire.available()){
+        temporary[i++] = Wire.read();
+    }
 
     int32_t temp = 0;
     temp = (temporary[2] << 12) | (temporary[1] << 3) | (temporary[2] >> 4);
@@ -30,7 +37,7 @@ int32_t getRawTemp(void){
 }
 
 int32_t getCompensatedTemp(int32_t rawData, int32_t *tfine){
-    int32_t rawData = getRawTemp(), var1, var2, T;
+    int32_t var1, var2, T;
     int32_t dig_T1 = 0, dig_T2 = 0, dig_T3 = 0;
 
     getTempCalb(&dig_T1, &dig_T2, &dig_T3);
@@ -45,26 +52,26 @@ int32_t getCompensatedTemp(int32_t rawData, int32_t *tfine){
 }
 
 void getTempCalb(int32_t *T1, int32_t *T2, int32_t *T3){
-    int32_t buff[2];
+    uint8_t buff[2];
 
-    I2CReadReg(CHIP_ADR, REG_T1_LSB, buff);
-    I2CReadReg(CHIP_ADR, REG_T1_MSB, &buff[1]);
+    I2CReadReg(CHIP_ADR, REG_T1_LSB, buff, TIMEOUT_I2C);
+    I2CReadReg(CHIP_ADR, REG_T1_MSB, &buff[1], TIMEOUT_I2C);
     *T1 = (buff[1] << 8) | buff[0];
 
-    I2CReadReg(CHIP_ADR, REG_T2_LSB, buff);
-    I2CReadReg(CHIP_ADR, REG_T2_MSB, &buff[1]);
+    I2CReadReg(CHIP_ADR, REG_T2_LSB, buff, TIMEOUT_I2C);
+    I2CReadReg(CHIP_ADR, REG_T2_MSB, &buff[1], TIMEOUT_I2C);
     *T2 = (buff[1] << 8) | buff[0];
 
-    I2CReadReg(CHIP_ADR, REG_T3_LSB, buff);
-    I2CReadReg(CHIP_ADR, REG_T3_MSB, &buff[1]);
+    I2CReadReg(CHIP_ADR, REG_T3_LSB, buff, TIMEOUT_I2C);
+    I2CReadReg(CHIP_ADR, REG_T3_MSB, &buff[1], TIMEOUT_I2C);
     *T3 = (buff[1] << 8) | buff[0];
 }
 
 int32_t getRawPres(void){
-    int32_t temporary[3];
-    I2CReadReg(CHIP_ADR, REG_PRESS_LSB, &temporary[1]);
-    I2CReadReg(CHIP_ADR, REG_PRESS_MSB, &temporary[2]);
-    I2CReadReg(CHIP_ADR, REG_PRESS_XLSB, &temporary[0]);
+    uint8_t temporary[3];
+    I2CReadReg(CHIP_ADR, REG_PRESS_LSB, &temporary[1], TIMEOUT_I2C);
+    I2CReadReg(CHIP_ADR, REG_PRESS_MSB, &temporary[2], TIMEOUT_I2C);
+    I2CReadReg(CHIP_ADR, REG_PRESS_XLSB, &temporary[0], TIMEOUT_I2C);
 
     int32_t press = 0;
     press = (temporary[2] << 12) | (temporary[1] << 3) | (temporary[2] >> 4);
@@ -110,7 +117,7 @@ uint32_t getCompensatedPres(int32_t rawData, int32_t tfine){
 void getPresCalb(int32_t *P1, int32_t *P2, int32_t *P3, int32_t *P4, int32_t *P5, int32_t *P6, int32_t *P7, int32_t *P8, int32_t *P9){
     uint8_t buff[18];
 
-    I2CReadRegMulti(CHIP_ADR, REG_P1_LSB, buff, 18);
+    I2CReadRegMulti(CHIP_ADR, REG_P1_LSB, buff, 18, TIMEOUT_I2C);
    
     for(int i = 0; i < 9; i++){
         int32_t value = 0;
