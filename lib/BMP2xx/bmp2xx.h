@@ -1,5 +1,5 @@
-#include "I2C.h"
 #include <Arduino.h>
+#include "I2C.h"
 
 // Setting and Status Registers
 #define REG_RESET 0xE0
@@ -49,7 +49,8 @@ void setCtrlReg(byte oversamplingTemp, byte oversamplingPressure, byte powerMode
 void setConfig(byte tStandby, byte filterSet, byte spi3w);
 int32_t getRawTemp(void);
 int32_t getCompensatedTemp(int32_t rawData, int32_t *tfine);
-void getTempCalb(int32_t *T1, int32_t *T2, int32_t *T3);
+void getTempCalb(unsigned short *T1, short *T2, short *T3);
 int32_t getRawPres(void);
 uint32_t getCompensatedPres(int32_t rawData, int32_t tfine);
-void getPresCalb(int32_t *P1, int32_t *P2, int32_t *P3, int32_t *P4, int32_t *P5, int32_t *P6, int32_t *P7, int32_t *P8, int32_t *P9);
+void getPresCalb(unsigned short *P1, short *P2, short *P3, short *P4, short *P5, short *P6, short *P7, short *P8, short *P9);
+void getraws(int32_t *pres, int32_t *temp);

@@ -20,25 +20,21 @@ void setConfig(byte tStandby, byte filterSet, byte spi3w){
 int32_t getRawTemp(void){
     int i = 0;
     int error = 5;
-    uint32_t temporary[3] = {0};
-    Wire.beginTransmission(CHIP_ADR);
-    Wire.write(0xFA);
-    error = Wire.endTransmission();
-    Wire.requestFrom(CHIP_ADR, 3);
-
-    while(Wire.available()){
-        temporary[i++] = Wire.read();
-    }
+    uint8_t temporary[3] = {0};
+    I2CReadByte(CHIP_ADR, REG_TEMP_MSB, &temporary[2], TIMEOUT_I2C);
+    I2CReadByte(CHIP_ADR, REG_TEMP_LSB, &temporary[1], TIMEOUT_I2C);
+    I2CReadByte(CHIP_ADR, REG_TEMP_XLSB, &temporary[0], TIMEOUT_I2C);
 
     int32_t temp = 0;
-    temp = (temporary[2] << 12) | (temporary[1] << 3) | (temporary[2] >> 4);
+    temp = (temporary[2] << 12) | (temporary[1] << 4) | (temporary[0] >> 4);
 
     return temp;
 }
 
 int32_t getCompensatedTemp(int32_t rawData, int32_t *tfine){
     int32_t var1, var2, T;
-    int32_t dig_T1 = 0, dig_T2 = 0, dig_T3 = 0;
+    unsigned short dig_T1 = 0;
+    short dig_T2 = 0, dig_T3 = 0;
 
     getTempCalb(&dig_T1, &dig_T2, &dig_T3);
 
@@ -51,20 +47,14 @@ int32_t getCompensatedTemp(int32_t rawData, int32_t *tfine){
     return T;
 }
 
-void getTempCalb(int32_t *T1, int32_t *T2, int32_t *T3){
-    uint8_t buff[2];
+void getTempCalb(unsigned short *T1, short *T2, short *T3){
+    uint8_t buff[6];
 
-    I2CReadByte(CHIP_ADR, REG_T1_LSB, buff, TIMEOUT_I2C);
-    I2CReadByte(CHIP_ADR, REG_T1_MSB, &buff[1], TIMEOUT_I2C);
+    I2CReadBytes(CHIP_ADR, REG_T1_LSB, buff, 6, TIMEOUT_I2C);
+
     *T1 = (buff[1] << 8) | buff[0];
-
-    I2CReadByte(CHIP_ADR, REG_T2_LSB, buff, TIMEOUT_I2C);
-    I2CReadByte(CHIP_ADR, REG_T2_MSB, &buff[1], TIMEOUT_I2C);
-    *T2 = (buff[1] << 8) | buff[0];
-
-    I2CReadByte(CHIP_ADR, REG_T3_LSB, buff, TIMEOUT_I2C);
-    I2CReadByte(CHIP_ADR, REG_T3_MSB, &buff[1], TIMEOUT_I2C);
-    *T3 = (buff[1] << 8) | buff[0];
+    *T2 = (buff[3] << 8) | buff[2];
+    *T3 = (buff[5] << 8) | buff[4];
 }
 
 int32_t getRawPres(void){
@@ -74,7 +64,7 @@ int32_t getRawPres(void){
     I2CReadByte(CHIP_ADR, REG_PRESS_XLSB, &temporary[0], TIMEOUT_I2C);
 
     int32_t press = 0;
-    press = (temporary[2] << 12) | (temporary[1] << 3) | (temporary[2] >> 4);
+    press = (temporary[2] << 12) | (temporary[1] << 4) | (temporary[0] >> 4);
 
     return press;
 }
@@ -82,7 +72,8 @@ int32_t getRawPres(void){
 uint32_t getCompensatedPres(int32_t rawData, int32_t tfine){
     int32_t var1, var2;
     uint32_t P;
-    int32_t dig_P1 = 0, dig_P2 = 0, dig_P3 = 0, dig_P4 = 0, dig_P5 = 0, dig_P6 = 0, dig_P7 = 0, dig_P8 = 0, dig_P9 = 0;
+    unsigned short dig_P1 = 0;
+    short dig_P2 = 0, dig_P3 = 0, dig_P4 = 0, dig_P5 = 0, dig_P6 = 0, dig_P7 = 0, dig_P8 = 0, dig_P9 = 0;
 
     getPresCalb(&dig_P1, &dig_P2, &dig_P3, &dig_P4, &dig_P5, &dig_P6, &dig_P7, &dig_P8, &dig_P9);
 
@@ -114,7 +105,7 @@ uint32_t getCompensatedPres(int32_t rawData, int32_t tfine){
     return P;
 }
 
-void getPresCalb(int32_t *P1, int32_t *P2, int32_t *P3, int32_t *P4, int32_t *P5, int32_t *P6, int32_t *P7, int32_t *P8, int32_t *P9){
+void getPresCalb(unsigned short *P1, short *P2, short *P3, short *P4, short *P5, short *P6, short *P7, short *P8, short *P9){
     uint8_t buff[18];
 
     I2CReadBytes(CHIP_ADR, REG_P1_LSB, buff, 18, TIMEOUT_I2C);
@@ -176,3 +167,19 @@ void getPresCalb(int32_t *P1, int32_t *P2, int32_t *P3, int32_t *P4, int32_t *P5
     I2CReadByte(CHIP_ADR, REG_P3_MSB, &buff[1]);
     *P9 = (buff[1] << 8) | buff[0];
 } */
+
+void getraws(int32_t *pres, int32_t *temp){
+    uint8_t temporary[6];
+    I2CReadBytes(CHIP_ADR, REG_PRESS_MSB, temporary, 6, TIMEOUT_I2C);
+
+    *pres = (temporary[0] << 12) | (temporary[1] << 4) | (temporary[0] >> 4);
+    *temp = (temporary[3] << 12) | (temporary[4] << 4) | (temporary[5] >> 4);
+}
+
+/* void getraws(int32_t *pres, int32_t *temp){
+    uint8_t temporary[6];
+    I2Cdev::readBytes(CHIP_ADR, REG_PRESS_MSB, 6, temporary);
+
+    *pres = (temporary[2] << 12) | (temporary[1] << 4) | (temporary[0] >> 4);
+    *temp = (temporary[5] << 12) | (temporary[4] << 4) | (temporary[3] >> 4);
+}*/

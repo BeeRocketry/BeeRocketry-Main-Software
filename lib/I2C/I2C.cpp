@@ -6,7 +6,7 @@
 #include <Wire.h>
 
 #define I2C2_SDA PB7
-#define I2C2_SCL PB6
+#define I2C2_SCL PB8
 
 void I2Cinit(void){
     Wire.setSDA(I2C2_SDA);
@@ -34,7 +34,7 @@ int8_t I2CReadByte(uint8_t chipadr, uint8_t regadr, uint8_t *temp, uint16_t time
     Wire.endTransmission();
 
     Wire.beginTransmission(chipadr);
-    Wire.requestFrom(chipadr, 1);
+    Wire.requestFrom(chipadr, (uint8_t)1);
 
     while(Wire.available() && (timeout == 0 || millis() - t1 < timeout)){
         *temp = Wire.read();
@@ -57,14 +57,11 @@ int8_t I2CReadBytes(uint8_t chipadr, uint8_t regadr, uint8_t *temp, uint8_t leng
     Wire.write(regadr);
     Wire.endTransmission();
 
-    Wire.beginTransmission(chipadr);
     Wire.requestFrom(chipadr, length);
 
     while(Wire.available() && (timeout == 0 || millis() - t1 < timeout)){
         temp[cnt++] = Wire.read();
     }
-
-    Wire.endTransmission();
 
     if(timeout > 0 && millis() - t1 >= timeout && cnt < length){
         cnt = -1;

@@ -6,6 +6,8 @@
 #include <LoRa_E32.h>
 
 void setsMainOpt(void);
+void setsMainOptreceiver();
+void rfInitReceiver();
 void rfInit(void);
 void sendMessage(void);
 void printParameters(struct Configuration conf);
