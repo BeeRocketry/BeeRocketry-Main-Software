@@ -4,6 +4,7 @@
 #define seaLevelhPa 1013.25
 
 // Setting and Status Registers
+#define REG_ID 0xD0
 #define REG_RESET 0xE0
 #define REG_STATUS 0xF3
 #define REG_CTRL_MEAS 0xF4

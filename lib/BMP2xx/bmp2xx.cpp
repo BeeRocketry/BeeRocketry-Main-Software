@@ -4,6 +4,16 @@ void bmpInit(void)
 {
     setCtrlReg(0b001, 0b011, 0b11);
     setConfig(0b010, 0b000, 0b0);
+    Serial2.println("BMP Port Aktifleştirildi.");
+    Serial2.print("BMP I2C Adress: 0x");
+    Serial2.println(bmpgetDeviceID(), HEX);
+}
+
+uint8_t bmpgetDeviceID(void){
+    uint8_t temp;
+    I2CReadByte(CHIP_ADR, REG_ID, &temp, TIMEOUT_I2C);
+
+    return temp;
 }
 
 void setCtrlReg(byte oversamplingTemp, byte oversamplingPressure, byte powerMode)

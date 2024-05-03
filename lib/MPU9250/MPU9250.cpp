@@ -5,6 +5,9 @@ void mpuInit(void){
     setGyroRange(0b01);
     setAccelRange(0b11);
     setSleep(false);
+    Serial2.println("MPU Port Aktifleştirildi.");
+    Serial2.print("MPU I2C Adress: 0x");
+    Serial2.println(getDeviceID(), HEX);
 }
 
 bool testConnect(){
@@ -192,7 +195,7 @@ void setAccelZOffsetUser(int16_t binary){
 }
 
 void mpuAccelGyroTest(){
-    int16_t ax, ay, az, gx, gy, gz;
+  int16_t ax, ay, az, gx, gy, gz;
   getRawGyroAccel(&ax, &ay, &az, &gx, &gy, &gz);
   Serial2.println("Accel");
   Serial2.print(" X: ");

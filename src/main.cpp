@@ -13,17 +13,14 @@ void setup() {
   }
   Serial2.println("Seri Port Aktifleştirildi.");
   delay(1000);
+
   I2Cinit(PB7, PB8);
-  Serial2.println("I2C Port Aktifleştirildi.");
-  delay(1000);
-  mpuInit();
-  Serial2.println("MPU Port Aktifleştirildi.");
   delay(1000);
 
-  Serial2.println(getDeviceID(), HEX);
+  mpuInit();
   delay(1000);
+
   bmpInit();
-  Serial2.println("BMP Port Aktifleştirildi.");
   delay(1000);
 }
 
