@@ -62,3 +62,5 @@ void setGyroRange(uint8_t range);
 void setAccelRange(uint8_t range);
 void setSleep(bool cond);
 void setClock(uint8_t bits);
+void getRawGyroAccel(int16_t *ax, int16_t *ay, int16_t *az, int16_t *gx, int16_t *gy, int16_t *gz);
+void getRawGyroAccelMag(int16_t *ax, int16_t *ay, int16_t *az, int16_t *gx, int16_t *gy, int16_t *gz, int16_t *mx, int16_t *my, int16_t *mz);

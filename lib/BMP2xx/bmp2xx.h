@@ -1,6 +1,8 @@
 #include <Arduino.h>
 #include "I2C.h"
 
+#define seaLevelhPa 1013.25
+
 // Setting and Status Registers
 #define REG_RESET 0xE0
 #define REG_STATUS 0xF3
@@ -54,3 +56,5 @@ int32_t getRawPres(void);
 uint32_t getCompensatedPres(int32_t rawData, int32_t tfine);
 void getPresCalb(unsigned short *P1, short *P2, short *P3, short *P4, short *P5, short *P6, short *P7, short *P8, short *P9);
 void getraws(int32_t *pres, int32_t *temp);
+float getAltitude(int32_t pressure, int32_t temperature);
+void bmpTest(void);
