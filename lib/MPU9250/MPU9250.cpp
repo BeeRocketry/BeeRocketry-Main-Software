@@ -1,14 +1,14 @@
 #include "MPU9250.h"
 
 void mpuInit(void){
-    setClock(0b11);
+    setClock(0b1);
     setGyroRange(0b01);
     setAccelRange(0b11);
     setSleep(false);
 }
 
 bool testConnect(){
-    return getDeviceID() == 0x71;
+    return getDeviceID() == 0x68;
 }
 
 uint8_t getDeviceID(){
@@ -58,7 +58,7 @@ void setAccelDLPH(uint8_t binary){
 void setSleep(bool cond){
     uint8_t b;
     I2CReadByte(MPU_CHIPADR, POWER_MANAGEMENT, &b, TIMEOUT_I2C);
-    b = b | (cond << 6);
+    b = b & (cond << 6);
     I2CWriteByte(MPU_CHIPADR, POWER_MANAGEMENT, b);
 }
 

@@ -1,7 +1,7 @@
 #include <Arduino.h>
 #include "I2C.h"
 
-#define MPU_CHIPADR 0x00
+#define MPU_CHIPADR 0x68
 #define MAG_CHIPADR 0x0C
 
 #define WHOAMI 0x75
@@ -11,7 +11,7 @@
 #define CONFIG_ACCEL 0x1C
 #define CONFIG_ACCEL_2 0x1D
 #define POWER_MANAGEMENT 0x6B
-#define POWER_MANAGEMENT 0x6C
+#define POWER_MANAGEMENT_2 0x6C
 #define USER_CTRL 0x6A
 #define MAG_STATUS 0x2H
 #define MAG_STATUS_2 0x9H
@@ -64,3 +64,7 @@ void setSleep(bool cond);
 void setClock(uint8_t bits);
 void getRawGyroAccel(int16_t *ax, int16_t *ay, int16_t *az, int16_t *gx, int16_t *gy, int16_t *gz);
 void getRawGyroAccelMag(int16_t *ax, int16_t *ay, int16_t *az, int16_t *gx, int16_t *gy, int16_t *gz, int16_t *mx, int16_t *my, int16_t *mz);
+uint8_t getDeviceID();
+bool testConnect();
+void getRawGyro(int16_t *gyro);
+void getRawAccel(int16_t *accel);
