@@ -22,26 +22,13 @@ void setup() {
 
   Serial2.println(getDeviceID(), HEX);
   delay(1000);
+  bmpInit();
+  Serial2.println("BMP Port Aktifleştirildi.");
+  delay(1000);
 }
 
 void loop() {
-  int16_t ax, ay, az, gx, gy, gz;
-  getRawGyroAccel(&ax, &ay, &az, &gx, &gy, &gz);
-  Serial2.println("Accel");
-  Serial2.print(" X: ");
-  Serial2.print(ax);
-  Serial2.print(" Y: ");
-  Serial2.print(ay);
-  Serial2.print(" Z: ");
-  Serial2.println(az);
-  Serial2.println("Gyro");
-  Serial2.print(" X: ");
-  Serial2.print(gx);
-  Serial2.print(" Y: ");
-  Serial2.print(gy);
-  Serial2.print(" Z: ");
-  Serial2.println(gz);
-  Serial2.println();
-  Serial2.println();
+  mpuAccelGyroTest();
+  bmpTest();
   delay(1000);
 }

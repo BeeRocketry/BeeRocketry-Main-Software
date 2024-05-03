@@ -68,3 +68,4 @@ uint8_t getDeviceID();
 bool testConnect();
 void getRawGyro(int16_t *gyro);
 void getRawAccel(int16_t *accel);
+void mpuAccelGyroTest();

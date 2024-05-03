@@ -214,6 +214,14 @@ float getAltitude(int32_t pressure, int32_t temperature)
     preshpa = pressure * 1.0 / 100;
     tempC = temperature * 1.0 / 100;
 
+    Serial2.print("Temp: ");
+    Serial2.print(tempC);
+    Serial2.println(" C");
+    Serial2.print("Pres: ");
+    Serial2.print(preshpa);
+    Serial2.println(" hPa");
+    Serial2.print("Altitude: ");
+
     altitude = 44330 * (1.0 - pow(preshpa / seaLevelhPa, 0.1903));
 
     return altitude;
@@ -228,7 +236,6 @@ void bmpTest(void)
 
     getraws(&rawPres, &rawTemp);
 
-    Serial2.println("Raw Degerler Alindi....");
     Serial2.print("rawTemp: ");
     Serial2.println(rawTemp);
     Serial2.print("rawPres: ");
@@ -239,17 +246,8 @@ void bmpTest(void)
 
     altitude = getAltitude(pres, temp);
 
-    Serial2.println("Compensated Degerler Hesaplandi....");
-    Serial2.print("Temp: ");
-    Serial2.print(tempc);
-    Serial2.println(" C");
-    Serial2.print("Pres: ");
-    Serial2.print(preshpa);
-    Serial2.println(" hPa");
-    Serial2.print("Altitude: ");
     Serial2.print(altitude);
     Serial2.println(" meter");
-    Serial2.println();
     Serial2.println();
     Serial2.println();
 }
