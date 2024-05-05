@@ -69,3 +69,4 @@ bool testConnect();
 void getRawGyro(int16_t *gyro);
 void getRawAccel(int16_t *accel);
 void mpuAccelGyroTest();
+void mpuAccelGyroMagTest();

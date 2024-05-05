@@ -6,7 +6,7 @@ void bmpInit(void)
     setConfig(0b010, 0b000, 0b0);
     Serial2.println("BMP Port Aktifleştirildi.");
     Serial2.print("BMP I2C Adress: 0x");
-    Serial2.println(bmpgetDeviceID(), HEX);
+    Serial2.println(bmpgetDeviceID());
 }
 
 uint8_t bmpgetDeviceID(void){
@@ -223,21 +223,22 @@ float getAltitude(int32_t pressure, int32_t temperature)
 
     preshpa = pressure * 1.0 / 100;
     tempC = temperature * 1.0 / 100;
-
-    Serial2.print("Temp: ");
-    Serial2.print(tempC);
-    Serial2.println(" C");
-    Serial2.print("Pres: ");
-    Serial2.print(preshpa);
-    Serial2.println(" hPa");
-    Serial2.print("Altitude: ");
-
     altitude = 44330 * (1.0 - pow(preshpa / seaLevelhPa, 0.1903));
+
+    //Serial2.print("Temp: ");
+    //Serial2.print(tempC);
+    //Serial2.println(" C");
+    //Serial2.print("Pres: ");
+    //Serial2.print(preshpa);
+    //Serial2.println(" hPa");
+    //Serial2.print("Altitude: ");
+    //Serial2.println(altitude);
+    
 
     return altitude;
 }
 
-void bmpTest(void)
+void bmpTest(int32_t *t, int32_t *p, float * a)
 {
     int32_t rawTemp, rawPres, temp, pres;
     int32_t tfine;
@@ -256,8 +257,22 @@ void bmpTest(void)
 
     altitude = getAltitude(pres, temp);
 
+    *a = altitude;
+    *t = temp;
+    *p = pres;
     Serial2.print(altitude);
     Serial2.println(" meter");
     Serial2.println();
     Serial2.println();
+}
+
+float getAltitudeReal(void){
+    int32_t temp, pres;
+    int32_t tfine;
+    getraws(&pres, &temp);
+
+    temp = getCompensatedTemp(temp, &tfine);
+    pres = getCompensatedPres(pres, tfine);
+
+    return getAltitude(pres, temp);
 }

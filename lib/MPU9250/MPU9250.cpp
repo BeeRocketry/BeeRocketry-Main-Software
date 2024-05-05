@@ -213,3 +213,30 @@ void mpuAccelGyroTest(){
   Serial2.println(gz);
   Serial2.println();
 }
+
+void mpuAccelGyroMagTest(){
+  int16_t ax, ay, az, gx, gy, gz, mx, my, mz;
+  getRawGyroAccelMag(&ax, &ay, &az, &gx, &gy, &gz, &mx, &my, &mz);
+  Serial2.println("Accel");
+  Serial2.print(" X: ");
+  Serial2.print(ax);
+  Serial2.print(" Y: ");
+  Serial2.print(ay);
+  Serial2.print(" Z: ");
+  Serial2.println(az);
+  Serial2.println("Gyro");
+  Serial2.print(" X: ");
+  Serial2.print(gx);
+  Serial2.print(" Y: ");
+  Serial2.print(gy);
+  Serial2.print(" Z: ");
+  Serial2.println(gz);
+  Serial2.println("Mag");
+  Serial2.print(" X: ");
+  Serial2.print(mx);
+  Serial2.print(" Y: ");
+  Serial2.print(my);
+  Serial2.print(" Z: ");
+  Serial2.println(mz);
+  Serial2.println();
+}

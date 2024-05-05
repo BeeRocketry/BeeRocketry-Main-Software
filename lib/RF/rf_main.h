@@ -13,3 +13,5 @@ void sendMessage(void);
 void printParameters(struct Configuration conf);
 void haberlesmeTestTransmitter(void);
 void haberlesmeTestReceiver(void);
+void denemeHaberlesmeReceiver();
+void denemeHaberlesmeTransmitter();

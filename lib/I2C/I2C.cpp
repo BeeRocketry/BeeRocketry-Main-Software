@@ -12,7 +12,7 @@ void I2Cinit(int32_t SDA, int32_t SCL)
     Wire.setSCL(SCL);
     Wire.begin();
     Wire.setClock(400000);
-    Serial2.println("I2C Port Aktifleştirildi.");
+    //          Serial2.println("I2C Port Aktifleştirildi.");
 }
 
 bool I2CWriteByte(int8_t chipadr, int8_t regadr, int8_t data)

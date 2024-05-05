@@ -9,7 +9,7 @@
 #define REG_STATUS 0xF3
 #define REG_CTRL_MEAS 0xF4
 #define REG_CONFIG 0xF5
-#define CHIP_ADR 0x76
+#define CHIP_ADR 0x77
 
 // Data Registers
 #define REG_PRESS_MSB 0xF7
@@ -58,4 +58,6 @@ uint32_t getCompensatedPres(int32_t rawData, int32_t tfine);
 void getPresCalb(unsigned short *P1, short *P2, short *P3, short *P4, short *P5, short *P6, short *P7, short *P8, short *P9);
 void getraws(int32_t *pres, int32_t *temp);
 float getAltitude(int32_t pressure, int32_t temperature);
-void bmpTest(void);
+void bmpTest(int32_t *t, int32_t *p, float * a);
+uint8_t bmpgetDeviceID(void);
+float getAltitudeReal(void);
