@@ -3,8 +3,11 @@
 #include "rf_main.h"
 #include <MPU9250_WE.h>
 #define MPU9250_ADDR 0x68
+#define RFTEST
+#define SERIPORTRF
 
-HardwareSerial Serial2(PA3, PA2);
+//HardwareSerial Serial2(PA3, PA2);
+HardwareSerial Serial2(PB7, PB6);
 MPU9250_WE myMPU9250 = MPU9250_WE(MPU9250_ADDR);
 
 bool RampaDeger = true;
@@ -26,86 +29,110 @@ float rampaDegerFonksiyonu(void);
 
 void setup()
 {
-  Serial2.begin(9600);
-  while (!Serial2)
-  {
-  }
-  Serial2.println("Seri port aktiflestirildi....");
-  delay(1000);
+  #ifdef SENSORTEST
+    Serial2.begin(9600);
+    while (!Serial2)
+    {
+    }
+    Serial2.println("Seri port aktiflestirildi....");
+    delay(1000);
 
-  // rfInit();
-  // Serial2.println("RF port aktiflestirildi....");
-  delay(1000);
-  I2Cinit(PB7, PB6);
-  Serial2.println("I2C port aktiflestirildi....");
-  delay(1000);
-  bmpInit();
-  Serial2.println("Bmp port aktiflestirildi....");
-  delay(1000);
-  if (myMPU9250.init())
-  {
-    Serial2.println("MPU port aktiflestirilemedi....");
-  }
-  else
-  {
-    Serial2.println("MPU port aktiflestirildi....");
-  }
+    // rfInit();
+    // Serial2.println("RF port aktiflestirildi....");
+    delay(1000);
+    I2Cinit(PB7, PB6);
+    Serial2.println("I2C port aktiflestirildi....");
+    delay(1000);
+    bmpInit();
+    Serial2.println("Bmp port aktiflestirildi....");
+    delay(1000);
+    if (myMPU9250.init())
+    {
+      Serial2.println("MPU port aktiflestirilemedi....");
+    }
+    else
+    {
+      Serial2.println("MPU port aktiflestirildi....");
+    }
 
-  if (myMPU9250.initMagnetometer())
-  {
-    Serial2.println("Mag port aktiflestirilemedi....");
-  }
-  else
-  {
-    Serial2.println("Mag port aktiflestirildi....");
-  }
-  delay(1000);
-  Serial2.println("Position you MPU9250 flat and don't move it - calibrating...");
-  delay(1000);
-  myMPU9250.autoOffsets();
-  Serial2.println("Done!");
-  myMPU9250.enableGyrDLPF();
-  myMPU9250.setGyrDLPF(MPU9250_DLPF_6);
-  myMPU9250.setSampleRateDivider(5);
-  myMPU9250.setGyrRange(MPU9250_GYRO_RANGE_250);
-  myMPU9250.setAccRange(MPU9250_ACC_RANGE_4G);
-  myMPU9250.enableAccDLPF(true);
-  myMPU9250.setAccDLPF(MPU9250_DLPF_6);
-  myMPU9250.setMagOpMode(AK8963_CONT_MODE_100HZ);
-  delay(200);
-  Serial2.println("Rampa Deger Fonksiyonu Calistiriliyor...");
-  anaAlgSetup();
-  Serial2.print("Rampa Irtifa Degeri: ");
-  Serial2.println(rampaDegerIrtifa);
+    if (myMPU9250.initMagnetometer())
+    {
+      Serial2.println("Mag port aktiflestirilemedi....");
+    }
+    else
+    {
+      Serial2.println("Mag port aktiflestirildi....");
+    }
+    delay(1000);
+    Serial2.println("Position you MPU9250 flat and don't move it - calibrating...");
+    delay(1000);
+    myMPU9250.autoOffsets();
+    Serial2.println("Done!");
+    myMPU9250.enableGyrDLPF();
+    myMPU9250.setGyrDLPF(MPU9250_DLPF_6);
+    myMPU9250.setSampleRateDivider(5);
+    myMPU9250.setGyrRange(MPU9250_GYRO_RANGE_250);
+    myMPU9250.setAccRange(MPU9250_ACC_RANGE_4G);
+    myMPU9250.enableAccDLPF(true);
+    myMPU9250.setAccDLPF(MPU9250_DLPF_6);
+    myMPU9250.setMagOpMode(AK8963_CONT_MODE_100HZ);
+    delay(200);
+    Serial2.println("Rampa Deger Fonksiyonu Calistiriliyor...");
+    anaAlgSetup();
+    Serial2.print("Rampa Irtifa Degeri: ");
+    Serial2.println(rampaDegerIrtifa);
+  #endif
+
+  #ifdef RFTEST
+    #ifdef SERIPORTRF
+      Serial2.begin(9600);
+      while(!Serial2);
+      Serial2.println("Seri port aktiflestirildi...");
+    #endif
+    delay(1000);
+    rfInit();
+    #ifdef SERIPORTRF
+      Serial2.println("RF port aktiflestirildi...");
+    #endif
+    delay(1000);
+  #endif
 }
 
 void loop()
 {
   delay(50);
 
-  altitude = getAltitudeReal();
-  gValue = myMPU9250.getGValues();
-  pitch = myMPU9250.getRoll();
-  roll = myMPU9250.getPitch();
+  denemeHaberlesmeReceiver();
+  Serial2.println("Mesaj Loop...");
+  delay(1000);
+  #ifdef SENSORTEST
+    altitude = getAltitudeReal();
+    gValue = myMPU9250.getGValues();
+    pitch = myMPU9250.getRoll();
+    roll = myMPU9250.getPitch();
 
-  anaAlg(&altitude, &gValue, &pitch, &roll);
-  Serial2.print("Altitude: ");
-  Serial2.println(altitude);
-  Serial2.print("G in z: ");
-  Serial2.println(gValue.z);
-  Serial2.print("Pitch: ");
-  Serial2.println(pitch);
-  Serial2.print("Roll: ");
-  Serial2.println(roll);
-  Serial2.print("Rampa Deger: ");
-  Serial2.println(RampaDeger);
-  Serial2.print("Irtifa Sinir: ");
-  Serial2.println(IrtifaSinir);
-  Serial2.print("Kurtarma Sistemi: ");
-  Serial2.println(KurtarmaSistemi);
-  Serial2.print("BufOrt: ");
-  Serial2.println(bufort);
-  Serial2.println();
+    anaAlg(&altitude, &gValue, &pitch, &roll);
+
+    #ifdef SERIPORTMODE_ON
+      Serial2.print("Altitude: ");
+      Serial2.println(altitude);
+      Serial2.print("G in z: ");
+      Serial2.println(gValue.z);
+      Serial2.print("Pitch: ");
+      Serial2.println(pitch);
+      Serial2.print("Roll: ");
+      Serial2.println(roll);
+      Serial2.print("Rampa Deger: ");
+      Serial2.println(RampaDeger);
+      Serial2.print("Irtifa Sinir: ");
+      Serial2.println(IrtifaSinir);
+      Serial2.print("Kurtarma Sistemi: ");
+      Serial2.println(KurtarmaSistemi);
+      Serial2.print("BufOrt: ");
+      Serial2.println(bufort);
+      Serial2.println();
+    #endif
+  #endif
 }
 
 float rampaDegerFonksiyonu(void)

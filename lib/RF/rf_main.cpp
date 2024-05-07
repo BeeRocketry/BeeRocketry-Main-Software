@@ -7,13 +7,15 @@
 #include <LoRa_E32.h>
 
 #define AUX_PIN PB1
-#define AUX_PIN_Receiver PB4
+
+#define SERIPORTRF
 
 void setsMainOpt(void);
 void rfInit(void);
 
 int counter = 0;
 
+//HardwareSerial UART1(PB7, PB6);
 HardwareSerial UART1(PA3, PA2);
 
 LoRa_E32 e32ttl1w(&UART1, AUX_PIN);
@@ -59,9 +61,12 @@ void setsMainOpt()
     conf.SPED.uartParity = MODE_00_8N1;
 
     ResponseStatus rs = e32ttl1w.setConfiguration(conf, WRITE_CFG_PWR_DWN_SAVE);
-    //Serial2.println("Config: " + rs.getResponseDescription());
 
-    //printParameters(conf);
+    #ifdef SERIPORTRF
+        Serial2.println("Config: " + rs.getResponseDescription());
+
+        printParameters(conf);
+    #endif
     ayar.close();
 }
 
@@ -209,8 +214,13 @@ int i = 0;
 void denemeHaberlesmeTransmitter()
 {
     i++;
+    String msg = String(i);
     ResponseStatus rs = e32ttl1w.sendBroadcastFixedMessage(23,String(i));
-    //Serial2.println(rs.getResponseDescription());
+    #ifdef SERIPORTRF
+        Serial2.print("The Message is: ");
+        Serial2.println(msg);
+        Serial2.println(rs.getResponseDescription());
+    #endif
 }
 
 void denemeHaberlesmeReceiver()
