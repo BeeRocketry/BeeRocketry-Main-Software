@@ -13,133 +13,16 @@
 void setsMainOpt(void);
 void rfInit(void);
 
-int counter = 0;
-
-// HardwareSerial UART1(PB7, PB6);
+//HardwareSerial UART1(PB7, PB6);
 HardwareSerial UART1(PA3, PA2);
 
 LoRa_E32 e32ttl1w(&UART1, AUX_PIN);
-
-union temperature
-{
-    byte temp[4];
-    int32_t temperature;
-};
-
-union pressure
-{
-    byte pres[4];
-    int32_t pressure;
-};
-
-union altitude
-{
-    byte alt[4];
-    float altitude;
-};
-
-struct BMPData
-{
-    temperature BMPtemp;
-    pressure BMPpres;
-    altitude BMPalt;
-};
-
-union ivmex
-{
-    byte ivmex[4];
-    int32_t ivmexx;
-};
-
-union ivmey
-{
-    byte ivmey[4];
-    int32_t ivmeyy;
-};
-
-union ivmez
-{
-    byte ivmez[4];
-    int32_t ivmezz;
-};
-
-struct Ivme
-{
-    ivmex MPUIvmeX;
-    ivmey MPUIvmeY;
-    ivmez MPUIvmeZ;
-};
-
-union gyrox
-{
-    byte gyrox[4];
-    int32_t gyroxx;
-};
-
-union gyroy
-{
-    byte gyroy[4];
-    int32_t gyroyy;
-};
-
-union gyroz
-{
-    byte gyroz[4];
-    int32_t gyrozz;
-};
-
-struct Gyro
-{
-    gyrox MPUGyroX;
-    gyroy MPUGyroY;
-    gyroz MPUGyroZ;
-};
-
-union Aci
-{
-    byte aci[4];
-    int32_t acii;
-};
-
-struct MPUData
-{
-    Ivme MPUIvme;
-    Gyro MPUGyro;
-    Aci MPUAci;
-};
-
-union enlem
-{
-    byte enlem[4];
-    float enlemm;
-};
-
-union boylam
-{
-    byte boylam[4];
-    float boylamm;
-};
-
-struct GPSData
-{
-    enlem GPSEnlem;
-    boylam GPSBoylam;
-};
-
-struct VeriPaketi
-{
-    BMPData VeriBMP;
-    MPUData VeriMPU;
-    GPSData VeriGPS;
-};
 
 void rfInit()
 {
     e32ttl1w.begin();
 
     setsMainOpt();
-
-    e32ttl1w.setMode(MODE_0_NORMAL);
 }
 
 void setsMainOpt()
@@ -152,7 +35,7 @@ void setsMainOpt()
     Configuration conf = *(Configuration *)ayar.data;
 
     conf.ADDL = 0x0;
-    conf.ADDH = 0x01;
+    conf.ADDH = 0x5;
     conf.CHAN = 23;
 
     conf.OPTION.fec = FEC_1_ON;
@@ -255,7 +138,7 @@ void printParameters(struct Configuration conf)
 
 void haberlesmeTestTransmitter(void)
 {
-    counter++;
+    int counter = 0;
     Serial2.println("Sending Message...");
     ResponseStatus rs = e32ttl1w.sendMessage(String(counter));
     Serial2.println(rs.getResponseDescription());
@@ -330,7 +213,7 @@ void denemeHaberlesmeTransmitter()
 
 void denemeHaberlesmeReceiver()
 {
-    if (e32ttl1w.available() > 1)
+    if (e32ttl1w.available())
     {
         ResponseContainer rsc = e32ttl1w.receiveMessage();
         if (rsc.status.code != 1)
@@ -347,7 +230,13 @@ void denemeHaberlesmeReceiver()
 
 void testdenemeReceiver()
 {
-    if (e32ttl1w.available())
+    struct VeriPaketi
+    {
+        uint8_t counter;
+        uint8_t irtifa[4];
+        uint8_t aci[4];
+    };
+    while (e32ttl1w.available() > 1)
     {
         ResponseStructContainer rsc = e32ttl1w.receiveMessage(sizeof(VeriPaketi));
 
@@ -359,59 +248,101 @@ void testdenemeReceiver()
         else
         {
             VeriPaketi veri = *(VeriPaketi *)rsc.data;
+            free(rsc.data);
             Serial2.println("Data Paketi Geldi");
+            Serial2.print("Paket Sayac: ");
+
+            Serial2.println(veri.counter);
             Serial2.println("BMP");
-            Serial2.print(" Sicaklik: ");
-            Serial2.println(veri.VeriBMP.BMPtemp.temperature);
+            // Serial2.print(" Sicaklik: ");
+            // Serial2.println(veri.sicaklik.u32var);
             Serial2.print(" Irtifa: ");
-            Serial2.println(veri.VeriBMP.BMPalt.altitude);
-            Serial2.print(" Basinc: ");
-            Serial2.println(veri.VeriBMP.BMPpres.pressure);
+            Serial2.println(*(float *)(veri.irtifa));
+            Serial2.println("Binary:");
+            Serial2.println(veri.irtifa[0], BIN);
+            Serial2.println(veri.irtifa[1], BIN);
+            Serial2.println(veri.irtifa[2], BIN);
+            Serial2.println(veri.irtifa[3], BIN);
+            // Serial2.print(" Basinc: ");
+            // Serial2.println(veri.basinc.u32var);
             Serial2.println();
-            Serial2.println("MPU");
+            /*Serial2.println("MPU");
             Serial2.println(" Ivme");
             Serial2.print("  X: ");
-            Serial2.println(veri.VeriMPU.MPUIvme.MPUIvmeX.ivmexx);
+            Serial2.println(*(float *)(veri.ivmex));
             Serial2.print("  Y: ");
-            Serial2.println(veri.VeriMPU.MPUIvme.MPUIvmeY.ivmeyy);
+            Serial2.println(*(float *)(veri.ivmey));
             Serial2.print("  Z: ");
-            Serial2.println(veri.VeriMPU.MPUIvme.MPUIvmeZ.ivmezz);
-            Serial2.println(" Gyro");
-            Serial2.print("  X: ");
-            Serial2.println(veri.VeriMPU.MPUGyro.MPUGyroX.gyroxx);
-            Serial2.print("  Y: ");
-            Serial2.println(veri.VeriMPU.MPUGyro.MPUGyroY.gyroyy);
-            Serial2.print("  Z: ");
-            Serial2.println(veri.VeriMPU.MPUGyro.MPUGyroZ.gyrozz);
+            Serial2.println(*(float *)(veri.ivmez));*/
+            // Serial2.println(" Gyro");
+            // Serial2.print("  X: ");
+            // Serial2.println(veri.gyrox.floatvar);
+            // Serial2.print("  Y: ");
+            // Serial2.println(veri.gyroy.floatvar);
+            // Serial2.print("  Z: ");
+            // Serial2.println(veri.gyroz.floatvar);
             Serial2.print(" Aci: ");
-            Serial2.println(veri.VeriMPU.MPUAci.acii);
-            Serial2.println("GPS");
-            Serial2.print(" Enlem: ");
-            Serial2.println(veri.VeriGPS.GPSEnlem.enlemm);
-            Serial2.print(" Boylam: ");
-            Serial2.println(veri.VeriGPS.GPSBoylam.boylamm);
+            Serial2.println(*(float *)(veri.aci));
+            // Serial2.println("GPS");
+            // Serial2.print(" Enlem: ");
+            // Serial2.println(veri.enlem.floatvar);
+            // Serial2.print(" Boylam: ");
+            // Serial2.println(veri.boylam.floatvar);
             Serial2.println();
             Serial2.println();
         }
     }
 }
 
-void testdenemeTransmitter(float irtifa, int32_t sicaklik, int32_t basinc, int32_t ax, int32_t ay, int32_t az, int32_t gx, int32_t gy, int32_t gz, float aci, float enlem, float boylam)
+byte cnt = 0;
+void testdenemeTransmitter(float *irtifa, int32_t *sicaklik, int32_t *basinc, float *ax, float *ay, float *az, float *gx, float *gy, float *gz, float *aci, float *enlem, float *boylam)
 {
-    VeriPaketi veri;
-    veri.VeriBMP.BMPtemp.temperature = sicaklik;
-    veri.VeriBMP.BMPpres.pressure = basinc;
-    veri.VeriBMP.BMPalt.altitude = irtifa;
-    veri.VeriMPU.MPUIvme.MPUIvmeX.ivmexx = ax;
-    veri.VeriMPU.MPUIvme.MPUIvmeY.ivmeyy = ay;
-    veri.VeriMPU.MPUIvme.MPUIvmeZ.ivmezz = az;
-    veri.VeriMPU.MPUGyro.MPUGyroX.gyroxx = gx;
-    veri.VeriMPU.MPUGyro.MPUGyroY.gyroyy = gy;
-    veri.VeriMPU.MPUGyro.MPUGyroZ.gyrozz = gz;
-    veri.VeriMPU.MPUAci.acii = aci;
-    veri.VeriGPS.GPSEnlem.enlemm = enlem;
-    veri.VeriGPS.GPSBoylam.boylamm = boylam;
+    struct VeriPaketi
+    {
+        uint8_t counter;
+        uint8_t irtifa[4];
+        uint8_t aci[4];
+    } veri;
+    cnt++;
+    if (cnt > 250)
+    {
+        cnt = 0;
+    }
+
+    *(float *)(veri.aci) = *aci;
+    veri.counter = cnt;
+    *(float *)(veri.irtifa) = *irtifa;
+
+    Serial2.print("Irtifa: ");
+    Serial2.println(veri.irtifa[0], BIN);
+    Serial2.println(veri.irtifa[1], BIN);
+    Serial2.println(veri.irtifa[2], BIN);
+    Serial2.println(veri.irtifa[3], BIN);
 
     ResponseStatus rs = e32ttl1w.sendBroadcastFixedMessage(23, &veri, sizeof(VeriPaketi));
     Serial2.println(rs.getResponseDescription());
 }
+
+void denemeddTransmitter(float *irtifa){
+    String msg = String(*irtifa);
+
+    ResponseStatus rs = e32ttl1w.sendBroadcastFixedMessage(23, msg);
+    Serial2.println(rs.getResponseDescription());
+}
+
+void denemeddReceiver(void){
+    if(e32ttl1w.available()){
+        ResponseContainer rsc = e32ttl1w.receiveMessage();
+        if (rsc.status.code != 1)
+        {
+            rsc.status.getResponseDescription();
+        }
+        else
+        {
+            Serial2.print("Irtifa: ");
+            Serial2.println(rsc.data);
+        }
+    }
+}
+
+void

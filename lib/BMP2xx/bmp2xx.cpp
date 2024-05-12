@@ -266,13 +266,14 @@ void bmpTest(int32_t *t, int32_t *p, float * a)
     Serial2.println();
 }
 
-float getAltitudeReal(void){
-    int32_t temp, pres;
+float getAltitudeReal(int32_t *temp, int32_t *pres){
     int32_t tfine;
-    getraws(&pres, &temp);
+    getraws(pres, temp);
+    int32_t tempBuf = *temp;
+    int32_t presBuf = *pres;
 
-    temp = getCompensatedTemp(temp, &tfine);
-    pres = getCompensatedPres(pres, tfine);
+    *temp = getCompensatedTemp(tempBuf, &tfine);
+    *pres = getCompensatedPres(presBuf, tfine);
 
-    return getAltitude(pres, temp);
+    return getAltitude(*pres, *temp);
 }
