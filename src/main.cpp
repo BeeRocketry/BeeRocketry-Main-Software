@@ -98,12 +98,15 @@ void setup()
       Serial2.println("RF port aklestirildi....");
       delay(2000);
     #endif
+
     I2Cinit(PB9, PB8);
     Serial2.println("I2C port aktiflestirildi....");
     delay(2000);
+
     bmpInit();
     Serial2.println("Bmp port aktiflestirildi....");
     delay(2000);
+
     if (myMPU9250.init())
     {
       Serial2.println("MPU port aktiflestirilemedi....");
@@ -122,10 +125,12 @@ void setup()
       Serial2.println("Mag port aktiflestirildi....");
     }
     delay(2000);
+
     Serial2.println("MPU Kalibre ediliyor..");
     delay(2000);
     myMPU9250.autoOffsets();
     Serial2.println("Tamamlandi!");
+
     myMPU9250.enableGyrDLPF();
     myMPU9250.setGyrDLPF(MPU9250_DLPF_6);
     myMPU9250.setSampleRateDivider(5);
@@ -135,6 +140,7 @@ void setup()
     myMPU9250.setAccDLPF(MPU9250_DLPF_6);
     myMPU9250.setMagOpMode(AK8963_CONT_MODE_100HZ);
     delay(1000);
+    
     Serial2.println("Rampa Deger Fonksiyonu Calistiriliyor...");
     anaAlgSetup();
     Serial2.print("Rampa Irtifa Degeri: ");
@@ -247,7 +253,7 @@ void loop()
     float alt, ort;
     for (int i = 0; i < 5; i++)
     {
-      alt = getAltitudeReal(&sicaklik, &basinc);
+      alt = getAltitudeReal(&sicaklik, &basinc); // GetAltitudeReal irtifa değerinin döndüren fonksiyondur
       toplam += alt;
       delay(50);
     }
