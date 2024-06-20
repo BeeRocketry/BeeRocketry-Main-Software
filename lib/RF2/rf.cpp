@@ -1,8 +1,10 @@
+#define DEBUG_MODE
+
 #include "rf.h"
 
 uint8_t calculateCRC8(const uint8_t *data, size_t length){
     if(sizeof(data) + 1 > MAX_TX_BUFFER_SIZE){
-        Serial1.println(F("CRC8 Fonksiyonu Maksimum Paketten Büyük"));
+        DEBUG_PRINTLN(F("CRC8 Fonksiyonu Maksimum Paketten Büyük"));
         return;
     }
 
@@ -25,7 +27,7 @@ Status waitAUX(unsigned long timeout){
     long startTime = millis();
     while(digitalRead(RF_AUX) == LOW){
         if (millis() - startTime > timeout) {
-            Serial1.println(F("RF_AUX zaman aşimina uğradi."));
+            DEBUG_PRINTLN(F("RF_AUX zaman aşimina uğradi."));
             return E32_Timeout;
         }
         managedDelay(20);
@@ -43,7 +45,7 @@ Status RFBegin(struct ConfigRF confs, uint8_t baudrate){
     digitalWrite(RF_M0, LOW);
     digitalWrite(RF_M1, LOW);
 
-    if(waitAUX(2000) == E32_Timeout){
+    if(waitAUX(TIMEOUT_AUX_RESPOND) == E32_Timeout){
         return E32_Timeout;
     }
 
@@ -57,7 +59,7 @@ Status setSettings(struct ConfigRF confs){
     SpedByte = (confs.RFSped.UARTParity << 6) | (confs.RFSped.UARTBaud << 3) | (confs.RFSped.AirDataRate);
     OptionByte = (confs.RFOption.TransmissionMode << 7) | (confs.RFOption.IODriver << 6) | (confs.RFOption.WirelessWakeUp << 3) | (confs.RFOption.FECset << 2) | (confs.RFOption.TransmissionPower);
 
-    if(waitAUX(2000) == E32_Timeout){
+    if(waitAUX(TIMEOUT_AUX_RESPOND) == E32_Timeout){
         return E32_Timeout;
     }
 
@@ -95,7 +97,7 @@ Status getSettings(struct ConfigRF *confs){
     uint8_t MesArr[7], sendpack[3];
     uint8_t receivedCRC;
 
-    if(waitAUX(2000) == E32_Timeout){
+    if(waitAUX(TIMEOUT_AUX_RESPOND) == E32_Timeout){
         return E32_Timeout;
     }
 
@@ -113,7 +115,7 @@ Status getSettings(struct ConfigRF *confs){
     long startTime = millis();
     while(SerialRF.available() < sizeof(MesArr)){
         if(millis() - startTime > 1000){
-            Serial1.println(F("Veri okuma zaman aşimina uğradi."));
+            DEBUG_PRINTLN(F("Veri okuma zaman aşimina uğradi."));
             return E32_Timeout;
         }
         managedDelay(20);
@@ -124,7 +126,7 @@ Status getSettings(struct ConfigRF *confs){
     receivedCRC = MesArr[6];
     
     if(receivedCRC != calculateCRC8(MesArr, 6)){
-        Serial1.println(F("CRC Hatasi: Veri Paketi Bozuk"));
+        DEBUG_PRINTLN(F("CRC Hatasi: Veri Paketi Bozuk"));
         return E32_CrcBroken;
     }
 
@@ -144,29 +146,29 @@ Status getSettings(struct ConfigRF *confs){
     confs->RFOption.FECset = (OptionByte >> 2) & 0b1;
     confs->RFOption.TransmissionPower = (OptionByte) & 0b11;
 
-    Serial1.println(F("------------------------------------------------------"));
-    Serial1.print(F("Yüksek Adres: "));    Serial1.println(confs->AddressHigh);
+    DEBUG_PRINTLN(F("------------------------------------------------------"));
+    DEBUG_PRINT(F("Yüksek Adres: "));    DEBUG_PRINTLN(confs->AddressHigh);
 
-    Serial1.print(F("Düşük Adres: "));    Serial1.println(confs->AddressLow);
+    DEBUG_PRINT(F("Düşük Adres: "));    DEBUG_PRINTLN(confs->AddressLow);
 
-    Serial1.print(F("Kanal: "));    Serial1.print(confs->Channel);
-    Serial1.print(F(" - "));    Serial1.print(410+confs->Channel);   Serial1.println(F(" MHz"));
-    Serial1.println();
+    DEBUG_PRINT(F("Kanal: "));    DEBUG_PRINT(confs->Channel);
+    DEBUG_PRINT(F(" - "));    DEBUG_PRINT(410+confs->Channel);   DEBUG_PRINTLN(F(" MHz"));
+    DEBUG_PRINTLN();
 
-    Serial1.println(F("Sped Ayarlari"));
-    Serial1.print(F("  UART Baud Rate: "));     Serial1.println(getUARTBaudRate(confs->RFSped.UARTBaud));
-    Serial1.print(F(" UART Parity: "));     Serial1.println(getUARTParity(confs->RFSped.UARTParity));
-    Serial1.print(F("  Air Data Rate: "));     Serial1.println(getAirData(confs->RFSped.UARTParity));
-    Serial1.println();
+    DEBUG_PRINTLN(F("Sped Ayarlari"));
+    DEBUG_PRINT(F("  UART Baud Rate: "));     DEBUG_PRINTLN(getUARTBaudRate(confs->RFSped.UARTBaud));
+    DEBUG_PRINT(F(" UART Parity: "));     DEBUG_PRINTLN(getUARTParity(confs->RFSped.UARTParity));
+    DEBUG_PRINT(F("  Air Data Rate: "));     DEBUG_PRINTLN(getAirData(confs->RFSped.UARTParity));
+    DEBUG_PRINTLN();
 
-    Serial1.println(F("Option Ayarlari"));
-    Serial1.print(F("  Transfer Türü: "));      Serial1.println(getTransmissionType(confs->RFOption.TransmissionMode));
-    Serial1.print(F("  IO Türü: "));        Serial1.println(getIOMode(confs->RFOption.IODriver));
-    Serial1.print(F("  Wireless Uyanma Süresi: "));     Serial1.println(getWirelessWakeup(confs->RFOption.WirelessWakeUp));
-    Serial1.print(F("  FEC Filtresi: "));       Serial1.println(getFECFilter(confs->RFOption.FECset));
-    Serial1.print(F("  Aktarim Gücü: "));       Serial1.println(getTranmissionPower(confs->RFOption.TransmissionPower));
-    Serial1.println();
-    Serial1.println(F("------------------------------------------------------"));
+    DEBUG_PRINTLN(F("Option Ayarlari"));
+    DEBUG_PRINT(F("  Transfer Türü: "));      DEBUG_PRINTLN(getTransmissionType(confs->RFOption.TransmissionMode));
+    DEBUG_PRINT(F("  IO Türü: "));        DEBUG_PRINTLN(getIOMode(confs->RFOption.IODriver));
+    DEBUG_PRINT(F("  Wireless Uyanma Süresi: "));     DEBUG_PRINTLN(getWirelessWakeup(confs->RFOption.WirelessWakeUp));
+    DEBUG_PRINT(F("  FEC Filtresi: "));       DEBUG_PRINTLN(getFECFilter(confs->RFOption.FECset));
+    DEBUG_PRINT(F("  Aktarim Gücü: "));       DEBUG_PRINTLN(getTranmissionPower(confs->RFOption.TransmissionPower));
+    DEBUG_PRINTLN();
+    DEBUG_PRINTLN(F("------------------------------------------------------"));
 
     managedDelay(750);
 
@@ -186,14 +188,14 @@ Status receiveSingleData(uint8_t *data){
     unsigned long t = millis();
     while(SerialRF.available() == 0){
         if(millis() - t > 1000){
-            Serial1.println(F("Veri Okuma Zaman Asimina Ugradi..."));
+            DEBUG_PRINTLN(F("Veri Okuma Zaman Asimina Ugradi..."));
             return E32_Timeout;
         }
         managedDelay(20);
     }
 
     *data = SerialRF.read();
-    Serial1.println(F("Veri Alindi..."));
+    DEBUG_PRINTLN(F("Veri Alindi..."));
     return E32_Success;
 }
 
@@ -205,11 +207,11 @@ Status receiveDataPacket(uint8_t *data, size_t size){
     unsigned long t = millis();
     while(SerialRF.available() < size){
         if(SerialRF.available() == 0 && millis() - t > 100){
-            Serial1.println(F("Herhangi bir Veri Paketi gelmedi..."));
+            DEBUG_PRINTLN(F("Herhangi bir Veri Paketi gelmedi..."));
             return E32_NoMessage;
         }
         else if(millis() - t > 1000){
-            Serial1.println(F("Veri okuma zaman asimina ugradi..."));
+            DEBUG_PRINTLN(F("Veri okuma zaman asimina ugradi..."));
             return E32_Timeout;
         }
         managedDelay(20);
@@ -316,7 +318,7 @@ Status setTransmissionMode(struct ConfigRF *config, uint8_t Mode){
         break;
 
     default:
-        Serial1.println(F("Gonderim Turu belirlemede yanlis mod girildi..."));
+        DEBUG_PRINTLN(F("Gonderim Turu belirlemede yanlis mod girildi..."));
         return E32_FailureMode;
     }
 
@@ -331,7 +333,7 @@ Status setAddresses(struct ConfigRF *config, uint8_t AddHigh, uint8_t AddLow){
     }
 
     else{
-        Serial1.println(F("Adres Ayarlamasi Yapilamadi. Cihaz Şeffaf Iletisim Modunda..."));
+        DEBUG_PRINTLN(F("Adres Ayarlamasi Yapilamadi. Cihaz Şeffaf Iletisim Modunda..."));
         return E32_FailureMode;
     }
 }
@@ -343,7 +345,7 @@ Status setChannel(struct ConfigRF *config, uint8_t channel){
     }
 
     else{
-        Serial1.println(F("Kanal Ayarlamasi Yapilamadi. Cihaz Şeffaf Iletisim Modunda..."));
+        DEBUG_PRINTLN(F("Kanal Ayarlamasi Yapilamadi. Cihaz Şeffaf Iletisim Modunda..."));
         return E32_FailureMode;
     }
 }
@@ -368,7 +370,7 @@ Status setTransmissionPower(struct ConfigRF *config, uint8_t power){
         break;
     
     default:
-        Serial1.println(F("Güc Ayarlama icin yanlis ayar girildi..."));
+        DEBUG_PRINTLN(F("Güc Ayarlama icin yanlis ayar girildi..."));
         return E32_FailureMode;
     }
 
@@ -387,7 +389,7 @@ Status setIODriver(struct ConfigRF *config, uint8_t driver){
         break;
     
     default:
-        Serial1.println(F("IO driver belirlemede yanlis mod girildi..."));
+        DEBUG_PRINTLN(F("IO driver belirlemede yanlis mod girildi..."));
         return E32_FailureMode;
     }
 
@@ -406,7 +408,7 @@ Status setFECSettings(struct ConfigRF *config, uint8_t mode){
         break;
     
     default:
-        Serial1.println(F("FEC belirlemede yanlis mod girildi..."));
+        DEBUG_PRINTLN(F("FEC belirlemede yanlis mod girildi..."));
         return E32_FailureMode;
     }
 
@@ -449,7 +451,7 @@ Status setWirelesWakeup(struct ConfigRF *config, uint8_t time){
         break;
 
     default:
-        Serial1.println(F("Wireles Zaman belirlemede yanlis mod girildi..."));
+        DEBUG_PRINTLN(F("Wireles Zaman belirlemede yanlis mod girildi..."));
         return E32_FailureMode;
     }
 
@@ -472,7 +474,7 @@ Status setUARTParity(struct ConfigRF *config, uint8_t paritybyte){
         break;
     
     default:
-        Serial1.println(F("UART Parity belirlemede yanlis mod girildi..."));
+        DEBUG_PRINTLN(F("UART Parity belirlemede yanlis mod girildi..."));
         return E32_FailureMode;
     }
 
@@ -515,7 +517,7 @@ Status setUARTBaudRate(struct ConfigRF *config, uint8_t baudrate){
         break;
 
     default:
-        Serial1.println(F("UART Baud Rate belirlemede yanlis mod girildi..."));
+        DEBUG_PRINTLN(F("UART Baud Rate belirlemede yanlis mod girildi..."));
         return E32_FailureMode;
     }
 
@@ -550,7 +552,7 @@ Status setAirDataRate(struct ConfigRF *config, uint8_t airdatarate){
         break;
 
     default:
-        Serial1.println(F("Air Data Rate belirlemede yanlis mod girildi..."));
+        DEBUG_PRINTLN(F("Air Data Rate belirlemede yanlis mod girildi..."));
         return E32_FailureMode;
     }
 

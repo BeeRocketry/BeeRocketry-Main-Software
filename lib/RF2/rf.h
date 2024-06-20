@@ -11,6 +11,16 @@ HardwareSerial SerialRF (RF_RX, RF_TX);
 #define MAX_TX_BUFFER_SIZE 58
 #define TIMEOUT_AUX_RESPOND 500
 
+#define DEBUG_PRINTER Serial1
+
+#ifdef DEBUG_MODE
+    #define DEBUG_PRINT(...) {DEBUG_PRINTER.print(__VA_ARGS__); }
+    #define DEBUG_PRINTLN(...) {DEBUG_PRINTER.println(__VA_ARGS__); }
+#else
+    #define DEBUG_PRINT(...) {}
+    #define DEBUG_PRINTLN(...) {}
+#endif
+
 typedef enum Error_Status{
     E32_Success = 1,
     E32_Timeout,
@@ -74,7 +84,7 @@ typedef enum Error_Status{
 struct Sped{
     uint8_t UARTParity = UARTPARITY_8N1;
     uint8_t UARTBaud = UARTBAUDRATE_9600;
-    uint8_t AirDataRate = AIRDATARATE_24k;
+    uint8_t AirDataRate = AIRDATARATE_03k;
 };
 
 struct Option{
