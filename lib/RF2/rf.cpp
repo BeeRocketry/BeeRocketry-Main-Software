@@ -1,9 +1,8 @@
 #include "rf.h"
 
-// CRC8 Hesaplama Fonksiyonu
 uint8_t calculateCRC8(const uint8_t *data, size_t length){
-    if(length - 1 > MAX_TX_BUFFER_SIZE){
-        Serial1.println("CRC8 Fonksiyonu Maksimum Paketten Büyük");
+    if(sizeof(data) + 1 > MAX_TX_BUFFER_SIZE){
+        Serial1.println(F("CRC8 Fonksiyonu Maksimum Paketten Büyük"));
         return;
     }
 
@@ -22,17 +21,50 @@ uint8_t calculateCRC8(const uint8_t *data, size_t length){
     return crc;
 }
 
-int setSettings(struct ConfigRF confs){
+Status waitAUX(unsigned long timeout){
+    long startTime = millis();
+    while(digitalRead(RF_AUX) == LOW){
+        if (millis() - startTime > timeout) {
+            Serial1.println(F("RF_AUX zaman aşimina uğradi."));
+            return E32_Timeout;
+        }
+        managedDelay(20);
+    }
+
+    return E32_Timeout;
+}
+
+Status RFBegin(struct ConfigRF confs, uint8_t baudrate){
+    pinMode(RF_AUX, INPUT);
+    pinMode(RF_M0, OUTPUT);
+    pinMode(RF_M1, OUTPUT);
+    SerialRF.begin(baudrate);
+
+    digitalWrite(RF_M0, LOW);
+    digitalWrite(RF_M1, LOW);
+
+    if(waitAUX(2000) == E32_Timeout){
+        return E32_Timeout;
+    }
+
+    return E32_Success;
+}
+
+Status setSettings(struct ConfigRF confs){
     uint8_t SpedByte = 0, OptionByte = 0;
     uint8_t MesArr[7];
 
     SpedByte = (confs.RFSped.UARTParity << 6) | (confs.RFSped.UARTBaud << 3) | (confs.RFSped.AirDataRate);
     OptionByte = (confs.RFOption.TransmissionMode << 7) | (confs.RFOption.IODriver << 6) | (confs.RFOption.WirelessWakeUp << 3) | (confs.RFOption.FECset << 2) | (confs.RFOption.TransmissionPower);
 
+    if(waitAUX(2000) == E32_Timeout){
+        return E32_Timeout;
+    }
+
     digitalWrite(RF_M0, HIGH);
     digitalWrite(RF_M1, HIGH);
 
-    managedDelay(40);
+    managedDelay(20);
 
     MesArr[0] = 0xC0;
     MesArr[1] = confs.AddressHigh;
@@ -44,13 +76,8 @@ int setSettings(struct ConfigRF confs){
 
     SerialRF.write((uint8_t *)MesArr, sizeof(MesArr) / sizeof(MesArr[0]));
 
-    long startTime = millis();
-    while(digitalRead(RF_AUX) != HIGH){
-        if (millis() - startTime > 2000) {
-            Serial1.println(F("RF_AUX zaman aşimina uğradi."));
-            return -1;
-        }
-        managedDelay(20);
+    if(waitAUX(TIMEOUT_AUX_RESPOND) == E32_Timeout){
+        return E32_Timeout;
     }
 
     managedDelay(750);
@@ -58,28 +85,36 @@ int setSettings(struct ConfigRF confs){
     digitalWrite(RF_M0, LOW);
     digitalWrite(RF_M1, LOW);
 
-    return 0;
+    managedDelay(20);
+
+    return E32_Success;
 }
 
-int getSettings(struct ConfigRF *confs){
+Status getSettings(struct ConfigRF *confs){
     uint8_t SpedByte = 0, OptionByte = 0;
-    uint8_t MesArr[7];
+    uint8_t MesArr[7], sendpack[3];
     uint8_t receivedCRC;
+
+    if(waitAUX(2000) == E32_Timeout){
+        return E32_Timeout;
+    }
 
     digitalWrite(RF_M0, HIGH);
     digitalWrite(RF_M1, HIGH);
 
     managedDelay(40);
 
-    for(int i = 0; i < 3; i++){
-        SerialRF.write(0xC1);
-    }
+    sendpack[0] = 0xC1;
+    sendpack[1] = 0xC1;
+    sendpack[2] = 0xC1;
+
+    SerialRF.write((uint8_t *)sendpack, sizeof(sendpack) / sizeof(sendpack[0]));
     
     long startTime = millis();
     while(SerialRF.available() < sizeof(MesArr)){
         if(millis() - startTime > 1000){
             Serial1.println(F("Veri okuma zaman aşimina uğradi."));
-            return -1;
+            return E32_Timeout;
         }
         managedDelay(20);
     }
@@ -89,8 +124,8 @@ int getSettings(struct ConfigRF *confs){
     receivedCRC = MesArr[6];
     
     if(receivedCRC != calculateCRC8(MesArr, 6)){
-        Serial1.println("CRC Hatasi: Veri Paketi Bozuk");
-        return -2;
+        Serial1.println(F("CRC Hatasi: Veri Paketi Bozuk"));
+        return E32_CrcBroken;
     }
 
     confs->AddressHigh = MesArr[1];
@@ -138,99 +173,79 @@ int getSettings(struct ConfigRF *confs){
     digitalWrite(RF_M0, LOW);
     digitalWrite(RF_M1, LOW);
 
-    return 0;
+    managedDelay(20);
+
+    return E32_Success;
 }
 
-int receiveSingleData(uint8_t *data){
-    unsigned long t = millis();
-
-    while(digitalRead(RF_AUX) == LOW){
-        if(millis() - t > 1000){
-            Serial1.println("AUX Pini hazir durumda degil...");
-            return -2;
-        }
-        managedDelay(20);
+Status receiveSingleData(uint8_t *data){
+    if(waitAUX(TIMEOUT_AUX_RESPOND) == E32_Timeout){
+        return E32_Timeout;
     }
 
-    t = millis();
+    unsigned long t = millis();
     while(SerialRF.available() == 0){
         if(millis() - t > 1000){
-            Serial1.println("Veri Okuma Zaman Asimina Ugradi...");
-            return -1;
+            Serial1.println(F("Veri Okuma Zaman Asimina Ugradi..."));
+            return E32_Timeout;
         }
         managedDelay(20);
     }
 
     *data = SerialRF.read();
-    Serial1.println("Veri Alindi...");
-    return 0;
+    Serial1.println(F("Veri Alindi..."));
+    return E32_Success;
 }
 
-int receiveDataPacket(uint8_t *data, size_t size){
-    unsigned long t = millis();
-
-    while(digitalRead(RF_AUX) == LOW){
-        if(millis() - t > 1000){
-            Serial1.println("AUX Pini hazir durumda degil...");
-            return -2;
-        }
-        managedDelay(20);
+Status receiveDataPacket(uint8_t *data, size_t size){
+    if(waitAUX(TIMEOUT_AUX_RESPOND) == E32_Timeout){
+        return E32_Timeout;
     }
 
-    t = millis();
+    unsigned long t = millis();
     while(SerialRF.available() < size){
         if(SerialRF.available() == 0 && millis() - t > 100){
-            Serial1.println("Herhangi bir Veri Paketi gelmedi...");
-            return -2;
+            Serial1.println(F("Herhangi bir Veri Paketi gelmedi..."));
+            return E32_NoMessage;
         }
         else if(millis() - t > 1000){
-            Serial1.println("Veri okuma zaman asimina ugradi...");
-            return -1;
+            Serial1.println(F("Veri okuma zaman asimina ugradi..."));
+            return E32_Timeout;
         }
         managedDelay(20);
     }
 
     SerialRF.readBytes(data, size);
-    return 0;
+    return E32_Success;
 }
 
-int sendFixedSingleData(uint8_t AddressHigh, uint8_t AddressLow, uint8_t Channel, uint8_t data){
+Status sendFixedSingleData(uint8_t AddressHigh, uint8_t AddressLow, uint8_t Channel, uint8_t data){
     uint8_t packet[4];
     packet[0] = AddressHigh;
     packet[1] = AddressLow;
     packet[2] = Channel;
     packet[3] = data;
 
-    unsigned long t = millis();
-    while(digitalRead(RF_AUX) == LOW){
-        if(millis() - t > 500){
-            Serial1.println("AUX Pini Veri Gönderim durumuna gecmedi....");
-            return -1;
-        }
-        managedDelay(10);
+    if(waitAUX(TIMEOUT_AUX_RESPOND) == E32_Timeout){
+        return E32_Timeout;
     }
 
     SerialRF.write((uint8_t *)packet, sizeof(packet) / sizeof(packet[0]));
 
-    return 0;
+    return E32_Success;
 }
 
-int sendTransparentSingleData(uint8_t data){
-    unsigned long t = millis();
-    while(digitalRead(RF_AUX) == LOW){
-        if(millis() - t > 500){
-            Serial1.println("AUX Pini Veri Gönderim durumuna gecmedi....");
-            return -1;
-        }
-        managedDelay(10);
+Status sendTransparentSingleData(uint8_t data){
+    if(waitAUX(TIMEOUT_AUX_RESPOND) == E32_Timeout){
+        return E32_Timeout;
     }
-    
+
     SerialRF.write(data);
 
-    return 0;
+    return E32_Success;
 }
 
-int sendFixedDataPacket(uint8_t AddressHigh, uint8_t AddressLow, uint8_t Channel, uint8_t *data, size_t size){
+Status sendFixedDataPacket(uint8_t AddressHigh, uint8_t AddressLow, uint8_t Channel, uint8_t *data, size_t size){
     size_t totalPacket = (size + MAX_TX_BUFFER_SIZE - 1) / MAX_TX_BUFFER_SIZE;
 
     for(size_t i = 0; i < totalPacket; i++){
@@ -244,13 +259,8 @@ int sendFixedDataPacket(uint8_t AddressHigh, uint8_t AddressLow, uint8_t Channel
         packet[2] = Channel;
         memcpy(&packet[3], &data[offset], packetSize);
 
-        unsigned long t = millis();
-        while(digitalRead(RF_AUX) == LOW){
-            if(millis() - t > 500){
-                Serial1.println("AUX Pini Veri Gönderim durumuna gecmedi....");
-                return -1;
-            }
-            managedDelay(10);
+        if(waitAUX(TIMEOUT_AUX_RESPOND) == E32_Timeout){
+            return E32_Timeout;
         }
 
         SerialRF.write((uint8_t *)packet, sizeof(packet) / sizeof(packet[0]));
@@ -258,16 +268,14 @@ int sendFixedDataPacket(uint8_t AddressHigh, uint8_t AddressLow, uint8_t Channel
         managedDelay(10);
     }
 
-    return 0;
+    return E32_Success;
 }
 
-int sendBroadcastDataPacket(uint8_t Channel, uint8_t *data, size_t size){
-    sendFixedDataPacket(0x00, 0x00, Channel, data, size);
-
-    return 0;
+Status sendBroadcastDataPacket(uint8_t Channel, uint8_t *data, size_t size){
+    return sendFixedDataPacket(0x00, 0x00, Channel, data, size);
 }
 
-int sendTransparentDataPacket(uint8_t *data, size_t size){
+Status sendTransparentDataPacket(uint8_t *data, size_t size){
     size_t totalPacket = (size + MAX_TX_BUFFER_SIZE - 1) / MAX_TX_BUFFER_SIZE;
 
     for(size_t i = 0; i < totalPacket; i++){
@@ -278,13 +286,8 @@ int sendTransparentDataPacket(uint8_t *data, size_t size){
 
         memcpy(packet, &data[offset], packetSize);
 
-        unsigned long t = millis();
-        while(digitalRead(RF_AUX) == LOW){
-            if(millis() - t > 500){
-                Serial1.println("AUX Pini Veri Gönderim durumuna gecmedi....");
-                return -1;
-            }
-            managedDelay(10);
+        if(waitAUX(TIMEOUT_AUX_RESPOND) == E32_Timeout){
+            return E32_Timeout;
         }
 
         SerialRF.write((uint8_t *)packet, sizeof(packet) / sizeof(packet[0]));
@@ -292,10 +295,10 @@ int sendTransparentDataPacket(uint8_t *data, size_t size){
         managedDelay(10);
     }
 
-    return 0;
+    return E32_Success;
 }
 
-int setTransmissionMode(struct ConfigRF *config, uint8_t Mode){
+Status setTransmissionMode(struct ConfigRF *config, uint8_t Mode){
     switch (Mode)
     {
     case TRANSPARENTMODE:
@@ -313,39 +316,39 @@ int setTransmissionMode(struct ConfigRF *config, uint8_t Mode){
         break;
 
     default:
-        Serial1.println("Gonderim Turu belirlemede yanlis mod girildi...");
-        return -1;
+        Serial1.println(F("Gonderim Turu belirlemede yanlis mod girildi..."));
+        return E32_FailureMode;
     }
 
-    return 0;
+    return E32_Success;
 }
 
-int setAddresses(struct ConfigRF *config, uint8_t AddHigh, uint8_t AddLow){
+Status setAddresses(struct ConfigRF *config, uint8_t AddHigh, uint8_t AddLow){
     if(config->RFOption.TransmissionMode == FIXEDMODE){
         config->AddressHigh = AddHigh;
         config->AddressLow = AddLow;
-        return 0;
+        return E32_Success;
     }
 
     else{
-        Serial1.println("Adres Ayarlamasi Yapilamadi. Cihaz Şeffaf Iletisim Modunda...");
-        return -1;
+        Serial1.println(F("Adres Ayarlamasi Yapilamadi. Cihaz Şeffaf Iletisim Modunda..."));
+        return E32_FailureMode;
     }
 }
 
-int setChannel(struct ConfigRF *config, uint8_t channel){
+Status setChannel(struct ConfigRF *config, uint8_t channel){
     if(config->RFOption.TransmissionMode == FIXEDMODE){
         config->Channel = channel;
-        return 0;
+        return E32_Success;
     }
 
     else{
-        Serial1.println("Kanal Ayarlamasi Yapilamadi. Cihaz Şeffaf Iletisim Modunda...");
-        return -1;
+        Serial1.println(F("Kanal Ayarlamasi Yapilamadi. Cihaz Şeffaf Iletisim Modunda..."));
+        return E32_FailureMode;
     }
 }
 
-int setTransmissionPower(struct ConfigRF *config, uint8_t power){
+Status setTransmissionPower(struct ConfigRF *config, uint8_t power){
     switch (power)
     {
     case TRANSMISSIONPOWER_30:
@@ -365,14 +368,14 @@ int setTransmissionPower(struct ConfigRF *config, uint8_t power){
         break;
     
     default:
-        Serial1.println("Güc Ayarlama icin yanlis ayar girildi...");
-        return -1;
+        Serial1.println(F("Güc Ayarlama icin yanlis ayar girildi..."));
+        return E32_FailureMode;
     }
 
-    return 0;
+    return E32_Success;
 }
 
-int setIODriver(struct ConfigRF *config, uint8_t driver){
+Status setIODriver(struct ConfigRF *config, uint8_t driver){
     switch (driver)
     {
     case IO_PUSHPULL:
@@ -384,14 +387,14 @@ int setIODriver(struct ConfigRF *config, uint8_t driver){
         break;
     
     default:
-        Serial1.println("IO driver belirlemede yanlis mod girildi...");
-        return -1;
+        Serial1.println(F("IO driver belirlemede yanlis mod girildi..."));
+        return E32_FailureMode;
     }
 
-    return 0;
+    return E32_Success;
 }
 
-int setFECSettings(struct ConfigRF *config, uint8_t mode){
+Status setFECSettings(struct ConfigRF *config, uint8_t mode){
     switch (mode)
     {
     case FEC_OFF:
@@ -403,14 +406,14 @@ int setFECSettings(struct ConfigRF *config, uint8_t mode){
         break;
     
     default:
-        Serial1.println("FEC belirlemede yanlis mod girildi...");
-        return -1;
+        Serial1.println(F("FEC belirlemede yanlis mod girildi..."));
+        return E32_FailureMode;
     }
 
-    return 0;
+    return E32_Success;
 }
 
-int setWirelesWakeup(struct ConfigRF *config, uint8_t time){
+Status setWirelesWakeup(struct ConfigRF *config, uint8_t time){
     switch (time)
     {
     case WIRELESSWAKEUP_250:
@@ -446,14 +449,14 @@ int setWirelesWakeup(struct ConfigRF *config, uint8_t time){
         break;
 
     default:
-        Serial1.println("Wireles Zaman belirlemede yanlis mod girildi...");
-        return -1;
+        Serial1.println(F("Wireles Zaman belirlemede yanlis mod girildi..."));
+        return E32_FailureMode;
     }
 
-    return 0;
+    return E32_Success;
 }
 
-int setUARTParity(struct ConfigRF *config, uint8_t paritybyte){
+Status setUARTParity(struct ConfigRF *config, uint8_t paritybyte){
     switch (paritybyte)
     {
     case UARTPARITY_8N1:
@@ -469,14 +472,14 @@ int setUARTParity(struct ConfigRF *config, uint8_t paritybyte){
         break;
     
     default:
-        Serial1.println("UART Parity belirlemede yanlis mod girildi...");
-        return -1;
+        Serial1.println(F("UART Parity belirlemede yanlis mod girildi..."));
+        return E32_FailureMode;
     }
 
-    return 0;
+    return E32_Success;
 }
 
-int setUARTBaudRate(struct ConfigRF *config, uint8_t baudrate){
+Status setUARTBaudRate(struct ConfigRF *config, uint8_t baudrate){
     switch (baudrate)
     {
     case UARTBAUDRATE_1200:
@@ -512,14 +515,14 @@ int setUARTBaudRate(struct ConfigRF *config, uint8_t baudrate){
         break;
 
     default:
-        Serial1.println("UART Baud Rate belirlemede yanlis mod girildi...");
-        return -1;
+        Serial1.println(F("UART Baud Rate belirlemede yanlis mod girildi..."));
+        return E32_FailureMode;
     }
 
-    return 0;
+    return E32_Success;
 }
 
-int setAirDataRate(struct ConfigRF *config, uint8_t airdatarate){
+Status setAirDataRate(struct ConfigRF *config, uint8_t airdatarate){
     switch (airdatarate)
     {
     case AIRDATARATE_03k:
@@ -547,7 +550,9 @@ int setAirDataRate(struct ConfigRF *config, uint8_t airdatarate){
         break;
 
     default:
-        Serial1.println("Air Data Rate belirlemede yanlis mod girildi...");
-        return -1;
+        Serial1.println(F("Air Data Rate belirlemede yanlis mod girildi..."));
+        return E32_FailureMode;
     }
+
+    return E32_Success;
 }

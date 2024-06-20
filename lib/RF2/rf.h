@@ -9,6 +9,15 @@
 HardwareSerial SerialRF (RF_RX, RF_TX);
 
 #define MAX_TX_BUFFER_SIZE 58
+#define TIMEOUT_AUX_RESPOND 500
+
+typedef enum Error_Status{
+    E32_Success = 1,
+    E32_Timeout,
+    E32_CrcBroken,
+    E32_FailureMode,
+    E32_NoMessage,
+} Status;
 
 // SPED 7, 6 bit
 #define UARTPARITY_8N1 0b00
