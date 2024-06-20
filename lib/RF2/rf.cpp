@@ -2,6 +2,11 @@
 
 // CRC8 Hesaplama Fonksiyonu
 uint8_t calculateCRC8(const uint8_t *data, size_t length){
+    if(length - 1 > MAX_TX_BUFFER_SIZE){
+        Serial1.println("CRC8 Fonksiyonu Maksimum Paketten Büyük");
+        return;
+    }
+
     uint8_t crc = 0x00;
 
     for (size_t i = 0; i < length; ++i) {
@@ -136,6 +141,59 @@ int getSettings(struct ConfigRF *confs){
     return 0;
 }
 
+int receiveSingleData(uint8_t *data){
+    unsigned long t = millis();
+
+    while(digitalRead(RF_AUX) == LOW){
+        if(millis() - t > 1000){
+            Serial1.println("AUX Pini hazir durumda degil...");
+            return -2;
+        }
+        managedDelay(20);
+    }
+
+    t = millis();
+    while(SerialRF.available() == 0){
+        if(millis() - t > 1000){
+            Serial1.println("Veri Okuma Zaman Asimina Ugradi...");
+            return -1;
+        }
+        managedDelay(20);
+    }
+
+    *data = SerialRF.read();
+    Serial1.println("Veri Alindi...");
+    return 0;
+}
+
+int receiveDataPacket(uint8_t *data, size_t size){
+    unsigned long t = millis();
+
+    while(digitalRead(RF_AUX) == LOW){
+        if(millis() - t > 1000){
+            Serial1.println("AUX Pini hazir durumda degil...");
+            return -2;
+        }
+        managedDelay(20);
+    }
+
+    t = millis();
+    while(SerialRF.available() < size){
+        if(SerialRF.available() == 0 && millis() - t > 100){
+            Serial1.println("Herhangi bir Veri Paketi gelmedi...");
+            return -2;
+        }
+        else if(millis() - t > 1000){
+            Serial1.println("Veri okuma zaman asimina ugradi...");
+            return -1;
+        }
+        managedDelay(20);
+    }
+
+    SerialRF.readBytes(data, size);
+    return 0;
+}
+
 int sendFixedSingleData(uint8_t AddressHigh, uint8_t AddressLow, uint8_t Channel, uint8_t data){
     uint8_t packet[4];
     packet[0] = AddressHigh;
@@ -143,12 +201,30 @@ int sendFixedSingleData(uint8_t AddressHigh, uint8_t AddressLow, uint8_t Channel
     packet[2] = Channel;
     packet[3] = data;
 
+    unsigned long t = millis();
+    while(digitalRead(RF_AUX) == LOW){
+        if(millis() - t > 500){
+            Serial1.println("AUX Pini Veri Gönderim durumuna gecmedi....");
+            return -1;
+        }
+        managedDelay(10);
+    }
+
     SerialRF.write((uint8_t *)packet, sizeof(packet) / sizeof(packet[0]));
 
     return 0;
 }
 
 int sendTransparentSingleData(uint8_t data){
+    unsigned long t = millis();
+    while(digitalRead(RF_AUX) == LOW){
+        if(millis() - t > 500){
+            Serial1.println("AUX Pini Veri Gönderim durumuna gecmedi....");
+            return -1;
+        }
+        managedDelay(10);
+    }
+    
     SerialRF.write(data);
 
     return 0;

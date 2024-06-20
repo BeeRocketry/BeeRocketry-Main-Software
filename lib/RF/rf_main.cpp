@@ -344,5 +344,3 @@ void denemeddReceiver(void){
         }
     }
 }
-
-void

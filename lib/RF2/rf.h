@@ -84,8 +84,6 @@ struct ConfigRF{
     uint8_t Channel = 0x17;
 };
 
-
-
 void managedDelay(unsigned long timeout){
     unsigned long t = millis();
 
