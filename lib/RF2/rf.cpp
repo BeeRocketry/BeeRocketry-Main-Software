@@ -2,6 +2,30 @@
 
 #include "rf.h"
 
+/*
+---------------------------------------------------------------
+ Cyclic Redundancy Check Fonksiyonu
+    Alınan veri paketini x^8 + x^2 + x + 1 polinomunu
+    kullanarak kendi algoritması ile kontrol byte'ı
+    oluşturur.
+
+    Gönderilecek veriye crc8 kontrol byte'ı ek bir byte
+    olarak eklenir. Alıcı ise veri paketindeki verileri
+    işleyerek crc8 verisini elde eder ve gönderilendeki
+    crc8 kontrol byte'ı ile karşılaştırır. Eğer uyuşmaz
+    ise veri paketi bozuldu demektir.
+
+    Parameter
+        *data --> veri paketi array'i
+        length --> veri paketinde crc kontrol byte'ı oluşturmak için
+                   işlenecek veri sayısı (örnek olarak 1'i crc byte'ı
+                   olarak kullanılmak üzere 8 byte'lık bir array
+                   yolladıysak length 7 olmalıdır.)
+
+    Returns
+        crc --> işlenen veri paketinden oluşturulan crc kontrol byte'ı
+---------------------------------------------------------------
+*/
 uint8_t calculateCRC8(const uint8_t *data, size_t length){
     if(sizeof(data) + 1 > MAX_TX_BUFFER_SIZE){
         DEBUG_PRINTLN(F("CRC8 Fonksiyonu Maksimum Paketten Büyük"));
@@ -23,6 +47,23 @@ uint8_t calculateCRC8(const uint8_t *data, size_t length){
     return crc;
 }
 
+/*
+------------------------------------------------
+ AUX Durum Bekleme Fonksiyonu
+    RF cihazı müsait olduğu durumlarda AUX pininden HIGH
+    sinyal yollamaktadır. Bu fonksiyon cihazın müsait
+    olmasını beklemektedir. Eğer parametre olarak alınan
+    timeout süresi aşılır ise zaman aşımı döndürür.
+
+    Parameter
+        timeout --> RF cihazın müsait duruma gelmesi için beklenecek
+                    maksimum süre
+
+    Returns
+        E32_Timeout --> Zaman Aşımı
+        E32_Success --> Müsait Durum
+------------------------------------------------
+*/
 Status waitAUX(unsigned long timeout){
     long startTime = millis();
     while(digitalRead(RF_AUX) == LOW){
@@ -36,11 +77,38 @@ Status waitAUX(unsigned long timeout){
     return E32_Timeout;
 }
 
-Status RFBegin(struct ConfigRF confs, uint8_t baudrate){
+/*
+------------------------
+ RF Cihazı Başlangıç Ayarları Fonksiyonu
+    RF cihazının pin mod ayarlamaları, seri port ayarlamaları ve
+    mod ayarlamalarının yapıldığı başlangıç fonksiyonudur.
+
+    Parameter
+        confs --> Cihaz ayarlamalarını içeren struct yapısı
+    
+    Returns
+        E32_Timeout --> Zaman Aşımı
+        E32_Success --> İşlem Başarılı
+------------------------
+*/
+Status RFBegin(RF_UART_PARITY parity = UARTPARITY_8N1, RF_UART_BAUD baud = UARTBAUDRATE_9600, RF_AIR_DATA airdata = AIRDATARATE_03k, RF_TRANS_MODE transmode = FIXEDMODE, RF_IO_MODE IOmode = IO_PUSHPULL, RF_WIRELESS wirelesswake = WIRELESSWAKEUP_250, RF_FEC fecmode = FEC_ON, RF_TRANS_POWER transpower = TRANSMISSIONPOWER_30){
+    struct ConfigRF confs, getConfs;
+    setFECSettings(&confs, fecmode);
+    setIODriver(&confs, IOmode);
+    setTransmissionMode(&confs, transmode);
+    setTransmissionPower(&confs, transpower);
+    setWirelesWakeup(&confs, wirelesswake);
+    setAirDataRate(&confs, airdata);
+    setUARTBaudRate(&confs, baud);
+    setUARTParity(&confs, parity);
+
     pinMode(RF_AUX, INPUT);
     pinMode(RF_M0, OUTPUT);
     pinMode(RF_M1, OUTPUT);
-    SerialRF.begin(baudrate);
+
+    if(setSerialBaudRateBegin(confs) == E32_FailureMode){
+        return E32_FailureMode;
+    }
 
     digitalWrite(RF_M0, LOW);
     digitalWrite(RF_M1, LOW);
@@ -49,12 +117,90 @@ Status RFBegin(struct ConfigRF confs, uint8_t baudrate){
         return E32_Timeout;
     }
 
+    Status res = setSettings(confs);
+    if(res == E32_Timeout){
+        return E32_Timeout;
+    }
+    else if(res == E32_Success){
+        DEBUG_PRINTLN(F("Mod Ayarlamalari Basarili bir sekilde yapildi..."));
+    }
+
+    managedDelay(20);
+
+    getSettings(&getConfs);
+
+    DEBUG_PRINTLN(F("RF Begin Fonksiyonu basarili bir sekilde tamamlandi..."));
+    return E32_Success;
+}
+
+int8_t setSerialParityBegin(struct ConfigRF confs){
+    switch (confs.RFSped.UARTBaud)
+    {
+    case UARTPARITY_8N1:
+        return SERIAL_8N1;
+        break;
+
+    case UARTPARITY_8O1:
+        return SERIAL_8O1;
+        break;
+
+    case UARTPARITY_8E1:
+        return SERIAL_8E1;
+        break;
+
+    default:
+        DEBUG_PRINTLN(F("Baslangic Ayarlari yapilirken yanlis uartparity girildi..."));
+        DEBUG_PRINTLN(F("Otomatik olarak SERIAL_8N1 ayarina gecildi..."));
+        return SERIAL_8N1;
+    }
+}
+
+Status setSerialBaudRateBegin(struct ConfigRF confs){
+    switch (confs.RFSped.UARTBaud)
+    {
+    case UARTBAUDRATE_1200:
+        SerialRF.begin(1200, setSerialParityBegin(confs));
+        break;
+
+    case UARTBAUDRATE_2400:
+        SerialRF.begin(2400, setSerialParityBegin(confs));
+        break;
+
+    case UARTBAUDRATE_4800:
+        SerialRF.begin(4800, setSerialParityBegin(confs));
+        break;
+
+    case UARTBAUDRATE_9600:
+        SerialRF.begin(9600, setSerialParityBegin(confs));
+        break;
+    
+    case UARTBAUDRATE_19200:
+        SerialRF.begin(19200, setSerialParityBegin(confs));
+        break;
+
+    case UARTBAUDRATE_38400:
+        SerialRF.begin(38400, setSerialParityBegin(confs));
+        break;
+
+    case UARTBAUDRATE_57600:
+        SerialRF.begin(57600, setSerialParityBegin(confs));
+        break;
+
+    case UARTBAUDRATE_115200:
+        SerialRF.begin(115200, setSerialParityBegin(confs));
+        break;
+
+    default:
+        DEBUG_PRINTLN(F("Baslangic Ayarlari yapilirken yanlis uartbaudrate girildi..."));
+        return E32_FailureMode;
+    }
+
     return E32_Success;
 }
 
 Status setSettings(struct ConfigRF confs){
     uint8_t SpedByte = 0, OptionByte = 0;
-    uint8_t MesArr[7];
+    uint8_t MesArr[6];
 
     SpedByte = (confs.RFSped.UARTParity << 6) | (confs.RFSped.UARTBaud << 3) | (confs.RFSped.AirDataRate);
     OptionByte = (confs.RFOption.TransmissionMode << 7) | (confs.RFOption.IODriver << 6) | (confs.RFOption.WirelessWakeUp << 3) | (confs.RFOption.FECset << 2) | (confs.RFOption.TransmissionPower);
@@ -74,7 +220,6 @@ Status setSettings(struct ConfigRF confs){
     MesArr[3] = SpedByte;
     MesArr[4] = confs.Channel;
     MesArr[5] = OptionByte;
-    MesArr[6] = calculateCRC8(MesArr, 6);
 
     SerialRF.write((uint8_t *)MesArr, sizeof(MesArr) / sizeof(MesArr[0]));
 
@@ -94,7 +239,7 @@ Status setSettings(struct ConfigRF confs){
 
 Status getSettings(struct ConfigRF *confs){
     uint8_t SpedByte = 0, OptionByte = 0;
-    uint8_t MesArr[7], sendpack[3];
+    uint8_t MesArr[6], sendpack[3];
     uint8_t receivedCRC;
 
     if(waitAUX(TIMEOUT_AUX_RESPOND) == E32_Timeout){
@@ -122,13 +267,6 @@ Status getSettings(struct ConfigRF *confs){
     }
 
     SerialRF.readBytes(MesArr, sizeof(MesArr));
-
-    receivedCRC = MesArr[6];
-    
-    if(receivedCRC != calculateCRC8(MesArr, 6)){
-        DEBUG_PRINTLN(F("CRC Hatasi: Veri Paketi Bozuk"));
-        return E32_CrcBroken;
-    }
 
     confs->AddressHigh = MesArr[1];
     confs->AddressLow = MesArr[2];
@@ -334,6 +472,8 @@ Status setAddresses(struct ConfigRF *config, uint8_t AddHigh, uint8_t AddLow){
 
     else{
         DEBUG_PRINTLN(F("Adres Ayarlamasi Yapilamadi. Cihaz Şeffaf Iletisim Modunda..."));
+        config->AddressHigh = 0x00;
+        config->AddressLow = 0x00;
         return E32_FailureMode;
     }
 }
@@ -346,6 +486,7 @@ Status setChannel(struct ConfigRF *config, uint8_t channel){
 
     else{
         DEBUG_PRINTLN(F("Kanal Ayarlamasi Yapilamadi. Cihaz Şeffaf Iletisim Modunda..."));
+        config->Channel = 0x17;
         return E32_FailureMode;
     }
 }
