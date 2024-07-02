@@ -84,23 +84,38 @@ Status waitAUX(unsigned long timeout){
     mod ayarlamalarının yapıldığı başlangıç fonksiyonudur.
 
     Parameter
-        confs --> Cihaz ayarlamalarını içeren struct yapısı
+        HighAddress --> Cihaz yüksek adresi
+        LowAddress --> Cihaz düşük adresi
+        Channel --> iletişim frekansı (Varsayılan 0x17 --> 433 MHz)
+        parity --> Uart parity ayarı (Varsayılan 8N1)
+        baud --> Uart baudrate ayarı (Varsayılan 9600)
+        airdata --> Cihaz air data ayarı (Varsayılan 0.3k)
+        transmode --> iletişim modu (Varsayılan Şeffaf Mod)
+        IOmode --> RF Gpio ayarlaması (Varsayılan PushPull)
+        wireleswake --> Wireless uyanma süresi (Varsayılan 250ms)
+        fecmode --> FEC filtresi ayarı (Varsayılan Aktif)
+        transpower --> Cihaz güç ayarı
+
     
     Returns
         E32_Timeout --> Zaman Aşımı
         E32_Success --> İşlem Başarılı
 ------------------------
 */
-Status RFBegin(RF_UART_PARITY parity = UARTPARITY_8N1, RF_UART_BAUD baud = UARTBAUDRATE_9600, RF_AIR_DATA airdata = AIRDATARATE_03k, RF_TRANS_MODE transmode = FIXEDMODE, RF_IO_MODE IOmode = IO_PUSHPULL, RF_WIRELESS wirelesswake = WIRELESSWAKEUP_250, RF_FEC fecmode = FEC_ON, RF_TRANS_POWER transpower = TRANSMISSIONPOWER_30){
-    struct ConfigRF confs, getConfs;
+Status RFBegin(struct ConfigRF *getConfs, uint8_t HighAddress = 0x00, uint8_t LowAddress = 0x00, uint8_t channel = 0x17, RF_UART_PARITY parity = UARTPARITY_8N1, RF_UART_BAUD baud = UARTBAUDRATE_9600, RF_AIR_DATA airdata = AIRDATARATE_03k, RF_TRANS_MODE transmode = TRANSPARENTMODE, RF_IO_MODE IOmode = IO_PUSHPULL, RF_WIRELESS wirelesswake = WIRELESSWAKEUP_250, RF_FEC fecmode = FEC_ON, RF_TRANS_POWER transpower = TRANSMISSIONPOWER_30){
+    struct ConfigRF confs;
+    
+    setTransmissionMode(&confs, transmode);
     setFECSettings(&confs, fecmode);
     setIODriver(&confs, IOmode);
-    setTransmissionMode(&confs, transmode);
     setTransmissionPower(&confs, transpower);
     setWirelesWakeup(&confs, wirelesswake);
     setAirDataRate(&confs, airdata);
     setUARTBaudRate(&confs, baud);
     setUARTParity(&confs, parity);
+
+    setAddresses(&confs, HighAddress, LowAddress);
+    setChannel(&confs, channel);
 
     pinMode(RF_AUX, INPUT);
     pinMode(RF_M0, OUTPUT);
@@ -127,12 +142,19 @@ Status RFBegin(RF_UART_PARITY parity = UARTPARITY_8N1, RF_UART_BAUD baud = UARTB
 
     managedDelay(20);
 
-    getSettings(&getConfs);
+    getSettings(getConfs);
 
     DEBUG_PRINTLN(F("RF Begin Fonksiyonu basarili bir sekilde tamamlandi..."));
     return E32_Success;
 }
 
+/*
+------------------------
+ Seri Port Parity Ayarlama Fonksiyonu
+    RF cihazının bağlı olduğu seri portu rf cihazının
+    ayarında belirtilen parity'de ayarlamayı sağlar.
+------------------------
+*/
 int8_t setSerialParityBegin(struct ConfigRF confs){
     switch (confs.RFSped.UARTBaud)
     {
@@ -155,6 +177,13 @@ int8_t setSerialParityBegin(struct ConfigRF confs){
     }
 }
 
+/*
+------------------------
+ Seri Port Baudrate Ayarlama Fonksiyonu
+    RF cihazının bağlı olduğu seri portu rf cihazının
+    ayarında belirtilen baudrate'i ayarlamayı sağlar.
+------------------------
+*/
 Status setSerialBaudRateBegin(struct ConfigRF confs){
     switch (confs.RFSped.UARTBaud)
     {
@@ -198,6 +227,14 @@ Status setSerialBaudRateBegin(struct ConfigRF confs){
     return E32_Success;
 }
 
+/*
+------------------------
+ RF Cihaz Ayar Yapma Fonksiyonu
+    Parametre olarak yollanan ayarları gerekli şekillerde
+    paketleyerek cihazı ayar moduna alır ve ayarlamaları
+    yapar. Bittiğinde tekrar normal moda geri döner.
+------------------------
+*/
 Status setSettings(struct ConfigRF confs){
     uint8_t SpedByte = 0, OptionByte = 0;
     uint8_t MesArr[6];
@@ -237,6 +274,14 @@ Status setSettings(struct ConfigRF confs){
     return E32_Success;
 }
 
+/*
+------------------------
+ RF Cihaz Ayarları Gösterme Fonksiyonu
+    Cihazdan bulundurduğu ayarları alır ve bunları
+    parametre üzerinden döndürür. Aynı zamanda seri
+    porta debug mesajı olarak tüm ayarları yazdırır.
+------------------------
+*/
 Status getSettings(struct ConfigRF *confs){
     uint8_t SpedByte = 0, OptionByte = 0;
     uint8_t MesArr[6], sendpack[3];
@@ -386,18 +431,22 @@ Status sendTransparentSingleData(uint8_t data){
 }
 
 Status sendFixedDataPacket(uint8_t AddressHigh, uint8_t AddressLow, uint8_t Channel, uint8_t *data, size_t size){
-    size_t totalPacket = (size + MAX_TX_BUFFER_SIZE - 1) / MAX_TX_BUFFER_SIZE;
+    size_t maxDataSize = MAX_TX_BUFFER_SIZE - 4;
+    size_t totalPacket = (size + maxDataSize - 1) / maxDataSize ;
 
     for(size_t i = 0; i < totalPacket; i++){
-        size_t offset = i * MAX_TX_BUFFER_SIZE;
-        size_t packetSize = (size - offset > MAX_TX_BUFFER_SIZE) ? MAX_TX_BUFFER_SIZE : (size - offset);
+        size_t offset = i * maxDataSize;
+        size_t packetSize = (size - offset > maxDataSize) ? maxDataSize : (size - offset);
 
-        uint8_t packet[packetSize + 3];
+        uint8_t packet[packetSize + 4];
 
         packet[0] = AddressHigh;
         packet[1] = AddressLow;
         packet[2] = Channel;
         memcpy(&packet[3], &data[offset], packetSize);
+
+        uint8_t crc = calculateCRC8(&packet[3], packetSize);
+        packet[packetSize + 4] = crc;
 
         if(waitAUX(TIMEOUT_AUX_RESPOND) == E32_Timeout){
             return E32_Timeout;
@@ -416,15 +465,19 @@ Status sendBroadcastDataPacket(uint8_t Channel, uint8_t *data, size_t size){
 }
 
 Status sendTransparentDataPacket(uint8_t *data, size_t size){
-    size_t totalPacket = (size + MAX_TX_BUFFER_SIZE - 1) / MAX_TX_BUFFER_SIZE;
+    size_t maxDataSize = MAX_TX_BUFFER_SIZE - 1;
+    size_t totalPacket = (size + maxDataSize - 1) / maxDataSize;
 
     for(size_t i = 0; i < totalPacket; i++){
-        size_t offset = i * MAX_TX_BUFFER_SIZE;
-        size_t packetSize = (size - offset > MAX_TX_BUFFER_SIZE) ? MAX_TX_BUFFER_SIZE : (size - offset);
+        size_t offset = i * maxDataSize;
+        size_t packetSize = (size - offset > maxDataSize) ? maxDataSize : (size - offset);
 
-        uint8_t packet[packetSize];
+        uint8_t packet[packetSize + 1];
 
         memcpy(packet, &data[offset], packetSize);
+
+        uint8_t crc = calculateCRC8(packet, packetSize);
+        packet[packetSize] = crc;
 
         if(waitAUX(TIMEOUT_AUX_RESPOND) == E32_Timeout){
             return E32_Timeout;
@@ -457,6 +510,8 @@ Status setTransmissionMode(struct ConfigRF *config, uint8_t Mode){
 
     default:
         DEBUG_PRINTLN(F("Gonderim Turu belirlemede yanlis mod girildi..."));
+        DEBUG_PRINTLN(F("Şeffaf modda veri iletisimine gecildi..."));
+        config->RFOption.TransmissionMode = TRANSPARENTMODE;
         return E32_FailureMode;
     }
 
@@ -512,6 +567,7 @@ Status setTransmissionPower(struct ConfigRF *config, uint8_t power){
     
     default:
         DEBUG_PRINTLN(F("Güc Ayarlama icin yanlis ayar girildi..."));
+        config->RFOption.TransmissionPower = TRANSMISSIONPOWER_30;
         return E32_FailureMode;
     }
 
@@ -531,6 +587,7 @@ Status setIODriver(struct ConfigRF *config, uint8_t driver){
     
     default:
         DEBUG_PRINTLN(F("IO driver belirlemede yanlis mod girildi..."));
+        config->RFOption.IODriver = IO_PUSHPULL;
         return E32_FailureMode;
     }
 
@@ -550,6 +607,7 @@ Status setFECSettings(struct ConfigRF *config, uint8_t mode){
     
     default:
         DEBUG_PRINTLN(F("FEC belirlemede yanlis mod girildi..."));
+        config->RFOption.FECset = FEC_ON;
         return E32_FailureMode;
     }
 
@@ -593,6 +651,7 @@ Status setWirelesWakeup(struct ConfigRF *config, uint8_t time){
 
     default:
         DEBUG_PRINTLN(F("Wireles Zaman belirlemede yanlis mod girildi..."));
+        config->RFOption.WirelessWakeUp = WIRELESSWAKEUP_250;
         return E32_FailureMode;
     }
 
@@ -616,6 +675,7 @@ Status setUARTParity(struct ConfigRF *config, uint8_t paritybyte){
     
     default:
         DEBUG_PRINTLN(F("UART Parity belirlemede yanlis mod girildi..."));
+        config->RFSped.UARTParity = UARTPARITY_8N1;
         return E32_FailureMode;
     }
 
@@ -659,6 +719,7 @@ Status setUARTBaudRate(struct ConfigRF *config, uint8_t baudrate){
 
     default:
         DEBUG_PRINTLN(F("UART Baud Rate belirlemede yanlis mod girildi..."));
+        config->RFSped.UARTBaud = UARTBAUDRATE_9600;
         return E32_FailureMode;
     }
 
@@ -694,6 +755,7 @@ Status setAirDataRate(struct ConfigRF *config, uint8_t airdatarate){
 
     default:
         DEBUG_PRINTLN(F("Air Data Rate belirlemede yanlis mod girildi..."));
+        config->RFSped.AirDataRate = AIRDATARATE_03k;
         return E32_FailureMode;
     }
 

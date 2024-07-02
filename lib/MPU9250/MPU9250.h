@@ -57,6 +57,33 @@
 #define MAG_Z_OUTPUT_LSB 0x07
 #define MAG_Z_OUTPUT_MSB 0x08
 
+typedef enum MPU_FIFOMode{
+    FIFO_Overwrite = 0b0,
+    FIFO_Hold = 0b1
+}MPU_FIFOMode;
+
+typedef enum 
+
+typedef enum MAG_OperationMode{
+    MAG_POWERDOWN = 0b0000,
+    MAG_SINGLEMEASURE = 0b0001,
+    MAG_CONTINUOUSMEASURE1 = 0b0010,
+    MAG_CONTINUOUSMEASURE2 = 0b0011,
+    MAG_EXTERNALTRIG = 0b0100,
+    MAG_SELFTEST = 0b1000,
+    MAG_FUSEROM = 0b1111
+}MAG_OperationMode;
+
+typedef enum MAG_OutputBit{
+    MAG_14BIT = 0b0,
+    MAG_16BIT = 0b1
+}MAG_OutputBit;
+
+struct MAG_CONTROL1_REG{
+    MAG_OperationMode operationMode = MAG_CONTINUOUSMEASURE1;
+    MAG_OutputBit outputBit = MAG_16BIT;
+};
+
 void mpuInit(void);
 void setGyroRange(uint8_t range);
 void setAccelRange(uint8_t range);

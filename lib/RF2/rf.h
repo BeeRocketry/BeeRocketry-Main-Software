@@ -1,4 +1,5 @@
 #include <Arduino.h>
+#include "debugprinter.h"
 
 /*
 ------------------------
@@ -30,26 +31,6 @@ HardwareSerial SerialRF(RF_TX, RF_RX);
 */
 #define MAX_TX_BUFFER_SIZE 58
 #define TIMEOUT_AUX_RESPOND 500
-
-/*
---------------------------------------------------------------------
- Debug Printer Makrosu
-    DEBUG_MODE makrosu tanimlandığında debug mesajlarının
-    seri porta yazdırılmasını sağlayan makro tanımıdır.
-
-        DEBUG_PRINTER --> Yazdırılacak olan seri port aygıtını seçer
---------------------------------------------------------------------
-*/
-
-#define DEBUG_PRINTER Serial1
-
-#ifdef DEBUG_MODE
-    #define DEBUG_PRINT(...) {DEBUG_PRINTER.print(__VA_ARGS__); }
-    #define DEBUG_PRINTLN(...) {DEBUG_PRINTER.println(__VA_ARGS__); }
-#else
-    #define DEBUG_PRINT(...) {}
-    #define DEBUG_PRINTLN(...) {}
-#endif
 
 /*
 ---------------------------------------------------------------------
@@ -182,7 +163,7 @@ struct ConfigRF{
 */
 uint8_t calculateCRC8(const uint8_t *data, size_t length);
 Status waitAUX(unsigned long timeout);
-Status RFBegin(RF_UART_PARITY parity = UARTPARITY_8N1, RF_UART_BAUD baud = UARTBAUDRATE_9600, RF_AIR_DATA airdata = AIRDATARATE_03k, RF_TRANS_MODE transmode = FIXEDMODE, RF_IO_MODE IOmode = IO_PUSHPULL, RF_WIRELESS wirelesswake = WIRELESSWAKEUP_250, RF_FEC fecmode = FEC_ON, RF_TRANS_POWER transpower = TRANSMISSIONPOWER_30);
+Status RFBegin(struct ConfigRF *getConfs, uint8_t HighAddress, uint8_t LowAddress, uint8_t channel = 0x17, RF_UART_PARITY parity = UARTPARITY_8N1, RF_UART_BAUD baud = UARTBAUDRATE_9600, RF_AIR_DATA airdata = AIRDATARATE_03k, RF_TRANS_MODE transmode = TRANSPARENTMODE, RF_IO_MODE IOmode = IO_PUSHPULL, RF_WIRELESS wirelesswake = WIRELESSWAKEUP_250, RF_FEC fecmode = FEC_ON, RF_TRANS_POWER transpower = TRANSMISSIONPOWER_30);
 Status setSettings(struct ConfigRF confs);
 Status getSettings(struct ConfigRF *confs);
 Status receiveSingleData(uint8_t *data);
