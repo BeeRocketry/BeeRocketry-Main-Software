@@ -8,7 +8,8 @@
 --------------------------------------------------------------------
 */
 
-#define DEBUG_PRINTER Serial1
+extern HardwareSerial SeriPort;
+#define DEBUG_PRINTER SeriPort
 
 #ifdef DEBUG_MODE
     #define DEBUG_PRINT(...) {DEBUG_PRINTER.print(__VA_ARGS__); }

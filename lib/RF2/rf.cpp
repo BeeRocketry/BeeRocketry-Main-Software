@@ -2,6 +2,8 @@
 
 #include "rf.h"
 
+HardwareSerial SerialRF(RF_RX, RF_TX);
+
 /*
 ---------------------------------------------------------------
  Cyclic Redundancy Check Fonksiyonu
@@ -29,7 +31,7 @@
 uint8_t calculateCRC8(const uint8_t *data, size_t length){
     if(sizeof(data) + 1 > MAX_TX_BUFFER_SIZE){
         DEBUG_PRINTLN(F("CRC8 Fonksiyonu Maksimum Paketten Büyük"));
-        return;
+        return 99;
     }
 
     uint8_t crc = 0x00;
@@ -45,6 +47,12 @@ uint8_t calculateCRC8(const uint8_t *data, size_t length){
         }
     }
     return crc;
+}
+
+void clearSerialBuffer(){
+    while (SerialRF.available() > 0) {
+        SerialRF.read();
+    }
 }
 
 /*
@@ -74,7 +82,7 @@ Status waitAUX(unsigned long timeout){
         managedDelay(20);
     }
 
-    return E32_Timeout;
+    return E32_Success;
 }
 
 /*
@@ -102,8 +110,11 @@ Status waitAUX(unsigned long timeout){
         E32_Success --> İşlem Başarılı
 ------------------------
 */
-Status RFBegin(struct ConfigRF *getConfs, uint8_t HighAddress = 0x00, uint8_t LowAddress = 0x00, uint8_t channel = 0x17, RF_UART_PARITY parity = UARTPARITY_8N1, RF_UART_BAUD baud = UARTBAUDRATE_9600, RF_AIR_DATA airdata = AIRDATARATE_03k, RF_TRANS_MODE transmode = TRANSPARENTMODE, RF_IO_MODE IOmode = IO_PUSHPULL, RF_WIRELESS wirelesswake = WIRELESSWAKEUP_250, RF_FEC fecmode = FEC_ON, RF_TRANS_POWER transpower = TRANSMISSIONPOWER_30){
+Status RFBegin(struct ConfigRF *getConfs, uint8_t HighAddress, uint8_t LowAddress, uint8_t channel, RF_UART_PARITY parity, RF_UART_BAUD baud, RF_AIR_DATA airdata, RF_TRANS_MODE transmode, RF_IO_MODE IOmode, RF_WIRELESS wirelesswake, RF_FEC fecmode, RF_TRANS_POWER transpower){
     struct ConfigRF confs;
+
+    DEBUG_PRINTLN(F("RF Baslatiliyor..."));
+    managedDelay(1000);
     
     setTransmissionMode(&confs, transmode);
     setFECSettings(&confs, fecmode);
@@ -117,11 +128,19 @@ Status RFBegin(struct ConfigRF *getConfs, uint8_t HighAddress = 0x00, uint8_t Lo
     setAddresses(&confs, HighAddress, LowAddress);
     setChannel(&confs, channel);
 
+    DEBUG_PRINTLN(F("Struct ayarlamalari yapildi..."));
+    DEBUG_PRINTLN(F("Pin ayarlamalari Baslaniyor..."));
+
+    managedDelay(1000);
+
     pinMode(RF_AUX, INPUT);
     pinMode(RF_M0, OUTPUT);
     pinMode(RF_M1, OUTPUT);
 
+    DEBUG_PRINTLN(F("Pin cikislari ayarlandi..."));
+
     if(setSerialBaudRateBegin(confs) == E32_FailureMode){
+        DEBUG_PRINTLN(F("Seri port başlangici yapilamadi..."));
         return E32_FailureMode;
     }
 
@@ -129,22 +148,30 @@ Status RFBegin(struct ConfigRF *getConfs, uint8_t HighAddress = 0x00, uint8_t Lo
     digitalWrite(RF_M1, LOW);
 
     if(waitAUX(TIMEOUT_AUX_RESPOND) == E32_Timeout){
+        DEBUG_PRINTLN(F("Timeout Ugradi baslangici yapilamadi..."));
         return E32_Timeout;
     }
 
+    DEBUG_PRINTLN(F("RF Ayarlamalari Baslaniyor..."));
+
+    managedDelay(2000);
     Status res = setSettings(confs);
     if(res == E32_Timeout){
+        DEBUG_PRINTLN(F("RF Ayarlamalari zaman asimina ugradi..."));
         return E32_Timeout;
     }
     else if(res == E32_Success){
         DEBUG_PRINTLN(F("Mod Ayarlamalari Basarili bir sekilde yapildi..."));
     }
 
-    managedDelay(20);
+    DEBUG_PRINTLN(F("Ayarlar aliniyor..."));
+    managedDelay(3000);
 
     getSettings(getConfs);
 
     DEBUG_PRINTLN(F("RF Begin Fonksiyonu basarili bir sekilde tamamlandi..."));
+
+    clearSerialBuffer();
     return E32_Success;
 }
 
@@ -156,7 +183,7 @@ Status RFBegin(struct ConfigRF *getConfs, uint8_t HighAddress = 0x00, uint8_t Lo
 ------------------------
 */
 int8_t setSerialParityBegin(struct ConfigRF confs){
-    switch (confs.RFSped.UARTBaud)
+    switch (confs.RFSped.UARTParity)
     {
     case UARTPARITY_8N1:
         return SERIAL_8N1;
@@ -294,7 +321,7 @@ Status getSettings(struct ConfigRF *confs){
     digitalWrite(RF_M0, HIGH);
     digitalWrite(RF_M1, HIGH);
 
-    managedDelay(40);
+    managedDelay(100);
 
     sendpack[0] = 0xC1;
     sendpack[1] = 0xC1;
@@ -305,7 +332,8 @@ Status getSettings(struct ConfigRF *confs){
     long startTime = millis();
     while(SerialRF.available() < sizeof(MesArr)){
         if(millis() - startTime > 1000){
-            DEBUG_PRINTLN(F("Veri okuma zaman aşimina uğradi."));
+            DEBUG_PRINTLN(SerialRF.available());
+            DEBUG_PRINTLN(F("Veri okuma zaman aşimina ugradi."));
             return E32_Timeout;
         }
         managedDelay(20);
@@ -330,9 +358,9 @@ Status getSettings(struct ConfigRF *confs){
     confs->RFOption.TransmissionPower = (OptionByte) & 0b11;
 
     DEBUG_PRINTLN(F("------------------------------------------------------"));
-    DEBUG_PRINT(F("Yüksek Adres: "));    DEBUG_PRINTLN(confs->AddressHigh);
+    DEBUG_PRINT(F("Yuksek Adres: "));    DEBUG_PRINTLN(confs->AddressHigh);
 
-    DEBUG_PRINT(F("Düşük Adres: "));    DEBUG_PRINTLN(confs->AddressLow);
+    DEBUG_PRINT(F("Dusuk Adres: "));    DEBUG_PRINTLN(confs->AddressLow);
 
     DEBUG_PRINT(F("Kanal: "));    DEBUG_PRINT(confs->Channel);
     DEBUG_PRINT(F(" - "));    DEBUG_PRINT(410+confs->Channel);   DEBUG_PRINTLN(F(" MHz"));
@@ -341,15 +369,15 @@ Status getSettings(struct ConfigRF *confs){
     DEBUG_PRINTLN(F("Sped Ayarlari"));
     DEBUG_PRINT(F("  UART Baud Rate: "));     DEBUG_PRINTLN(getUARTBaudRate(confs->RFSped.UARTBaud));
     DEBUG_PRINT(F(" UART Parity: "));     DEBUG_PRINTLN(getUARTParity(confs->RFSped.UARTParity));
-    DEBUG_PRINT(F("  Air Data Rate: "));     DEBUG_PRINTLN(getAirData(confs->RFSped.UARTParity));
+    DEBUG_PRINT(F("  Air Data Rate: "));     DEBUG_PRINTLN(getAirData(confs->RFSped.AirDataRate));
     DEBUG_PRINTLN();
 
     DEBUG_PRINTLN(F("Option Ayarlari"));
-    DEBUG_PRINT(F("  Transfer Türü: "));      DEBUG_PRINTLN(getTransmissionType(confs->RFOption.TransmissionMode));
-    DEBUG_PRINT(F("  IO Türü: "));        DEBUG_PRINTLN(getIOMode(confs->RFOption.IODriver));
-    DEBUG_PRINT(F("  Wireless Uyanma Süresi: "));     DEBUG_PRINTLN(getWirelessWakeup(confs->RFOption.WirelessWakeUp));
+    DEBUG_PRINT(F("  Transfer Turu: "));      DEBUG_PRINTLN(getTransmissionType(confs->RFOption.TransmissionMode));
+    DEBUG_PRINT(F("  IO Turu: "));        DEBUG_PRINTLN(getIOMode(confs->RFOption.IODriver));
+    DEBUG_PRINT(F("  Wireless Uyanma Suresi: "));     DEBUG_PRINTLN(getWirelessWakeup(confs->RFOption.WirelessWakeUp));
     DEBUG_PRINT(F("  FEC Filtresi: "));       DEBUG_PRINTLN(getFECFilter(confs->RFOption.FECset));
-    DEBUG_PRINT(F("  Aktarim Gücü: "));       DEBUG_PRINTLN(getTranmissionPower(confs->RFOption.TransmissionPower));
+    DEBUG_PRINT(F("  Aktarim Gucu: "));       DEBUG_PRINTLN(getTranmissionPower(confs->RFOption.TransmissionPower));
     DEBUG_PRINTLN();
     DEBUG_PRINTLN(F("------------------------------------------------------"));
 
@@ -760,4 +788,214 @@ Status setAirDataRate(struct ConfigRF *config, uint8_t airdatarate){
     }
 
     return E32_Success;
+}
+
+/*
+------------------------------
+ Yardimci Fonksiyon Tanimlari
+    Ana fonksiyonlarda kullanılacak olan yardimci
+    fonksiyonlardir.
+
+        managedDelay --> Interruptları kesmeden delay sağlar
+        Diğer fonksiyonlar --> Config ayarlarını yazdırırken stringleri döndürecek olan fonksiyonlar
+------------------------------
+*/
+void managedDelay(unsigned long timeout){
+    unsigned long t = millis();
+
+    if((unsigned long) (t + timeout) == 0){
+        t = 0;
+    }
+
+    while((millis()-t) < timeout){
+        yield();
+    }
+}
+
+String getUARTBaudRate(byte uartbaud){
+    switch (uartbaud)
+    {
+    case UARTBAUDRATE_1200:
+        return F("1200 bps");
+        break;
+    
+    case UARTBAUDRATE_2400:
+        return F("2400 bps");
+        break;
+
+    case UARTBAUDRATE_4800:
+        return F("4800 bps");
+        break;
+
+    case UARTBAUDRATE_9600:
+        return F("9600 bps (Varsayilan)");
+        break;
+
+    case UARTBAUDRATE_19200:
+        return F("19200 bps");
+        break;
+
+    case UARTBAUDRATE_38400:
+        return F("38400 bps");
+        break;
+
+    case UARTBAUDRATE_57600:
+        return F("57600 bps");
+        break;
+
+    case UARTBAUDRATE_115200:
+        return F("115200 bps");
+        break;
+    }
+    return F("30 dBm");
+}
+
+String getUARTParity(byte uartparity){
+    switch (uartparity)
+    {
+    case UARTPARITY_8N1:
+        return F("8 Bit, Parity Yok, 1 Durdurma Biti");
+        break;
+    
+    case UARTPARITY_8E1:
+        return F("8 Bit, Çift Parity, 1 Durdurma Biti");
+        break;
+
+    case UARTPARITY_8O1:
+        return F("8 Bit, Tek Parity, 1 Durdurma Biti");
+        break;
+    }
+    return F("30 dBm");
+}
+
+String getAirData(byte airdata){
+    switch (airdata)
+    {
+    case AIRDATARATE_03k:
+        return F("0.3k bps");
+        break;
+    
+    case AIRDATARATE_12k:
+        return F("1.2k bps");
+        break;
+
+    case AIRDATARATE_24k:
+        return F("2.4k bps (Varsayilan)");
+        break;
+
+    case AIRDATARATE_48k:
+        return F("4.8k bps");
+        break;
+
+    case AIRDATARATE_96k:
+        return F("9.6k bps");
+        break;
+
+    case AIRDATARATE_192k:
+        return F("19.2k bps");
+        break;
+    }
+    return F("30 dBm");
+}
+
+String getTransmissionType(byte transmissiontype){
+    switch (transmissiontype)
+    {
+    case TRANSPARENTMODE:
+        return F("Seffaf Mod");
+        break;
+    
+    case FIXEDMODE:
+        return F("Sabit Kanal Modu");
+        break;
+    }
+    return F("30 dBm");
+}
+
+String getIOMode(byte iotype){
+    switch (iotype)
+    {
+    case IO_OPENDRAIN:
+        return F("IO Open Drain Modu");
+        break;
+    
+    case IO_PUSHPULL:
+        return F("IO Push Pull Modu");
+        break;
+    }  
+    return F("30 dBm");
+}
+
+String getWirelessWakeup(byte wireless){
+    switch (wireless)
+    {
+    case WIRELESSWAKEUP_250:
+        return F("250 ms");
+        break;
+    
+    case WIRELESSWAKEUP_500:
+        return F("500 ms");
+        break;
+
+    case WIRELESSWAKEUP_750:
+        return F("750 ms");
+        break;
+    
+    case WIRELESSWAKEUP_1000:
+        return F("1000 ms");
+        break;
+    
+    case WIRELESSWAKEUP_1250:
+        return F("1250 ms");
+        break;
+    
+    case WIRELESSWAKEUP_1500:
+        return F("1500 ms");
+        break;
+
+    case WIRELESSWAKEUP_1750:
+        return F("1750 ms");
+        break;
+
+    case WIRELESSWAKEUP_2000:
+        return F("2000 ms");
+        break;
+    } 
+    return F("30 dBm");
+}
+
+String getFECFilter(byte fecbyte){
+    switch (fecbyte)
+    {
+    case FEC_ON:
+        return F("Aktif");
+        break;
+    
+    case FEC_OFF:
+        return F("Devre Disi");
+        break;
+    } 
+    return F("30 dBm"); 
+}
+
+String getTranmissionPower(byte transmissionpower){
+    switch (transmissionpower)
+    {
+    case TRANSMISSIONPOWER_21:
+        return F("21 dBm");
+        break;
+    
+    case TRANSMISSIONPOWER_24:
+        return F("24 dBm");
+        break;
+    
+    case TRANSMISSIONPOWER_27:
+        return F("27 dBm");
+        break;
+    
+    case TRANSMISSIONPOWER_30:
+        return F("30 dBm");
+        break;
+    }
+    return F("30 dBm");
 }

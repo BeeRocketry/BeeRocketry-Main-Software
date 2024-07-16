@@ -1,12 +1,14 @@
+#include "debugprinter.h"
 #include "bmp2xx.h"
 
+// Başlangıç ayarlamalarını yapar.
 void bmpInit(void)
 {
     setCtrlReg(0b001, 0b011, 0b11);
     setConfig(0b010, 0b000, 0b0);
-    Serial2.println("BMP Port Aktifleştirildi.");
-    Serial2.print("BMP I2C Adress: 0x");
-    Serial2.println(bmpgetDeviceID());
+    DEBUG_PRINTLN(F("BMP Port Aktifleştirildi."));
+    DEBUG_PRINT(F("BMP I2C Adress: 0x"));
+    DEBUG_PRINTLN(bmpgetDeviceID());
 }
 
 uint8_t bmpgetDeviceID(void){
@@ -30,14 +32,13 @@ void setConfig(byte tStandby, byte filterSet, byte spi3w)
     I2CWriteByte(CHIP_ADR, REG_CONFIG, temp);
 }
 
+// Raw Sıcaklık Değerini Alır
 int32_t getRawTemp(void)
 {
     int i = 0;
     int error = 5;
     uint8_t temporary[3] = {0};
-    I2CReadByte(CHIP_ADR, REG_TEMP_MSB, &temporary[2], TIMEOUT_I2C);
-    I2CReadByte(CHIP_ADR, REG_TEMP_LSB, &temporary[1], TIMEOUT_I2C);
-    I2CReadByte(CHIP_ADR, REG_TEMP_XLSB, &temporary[0], TIMEOUT_I2C);
+    I2CReadBytes(CHIP_ADR, REG_TEMP_XLSB, temporary, 3, TIMEOUT_I2C);
 
     int32_t temp = 0;
     temp = (temporary[2] << 12) | (temporary[1] << 4) | (temporary[0] >> 4);
@@ -45,6 +46,7 @@ int32_t getRawTemp(void)
     return temp;
 }
 
+// Gerçek Sıcaklık değerini alır
 int32_t getCompensatedTemp(int32_t rawData, int32_t *tfine)
 {
     int32_t var1, var2, T;
@@ -76,9 +78,7 @@ void getTempCalb(unsigned short *T1, short *T2, short *T3)
 int32_t getRawPres(void)
 {
     uint8_t temporary[3];
-    I2CReadByte(CHIP_ADR, REG_PRESS_LSB, &temporary[1], TIMEOUT_I2C);
-    I2CReadByte(CHIP_ADR, REG_PRESS_MSB, &temporary[2], TIMEOUT_I2C);
-    I2CReadByte(CHIP_ADR, REG_PRESS_XLSB, &temporary[0], TIMEOUT_I2C);
+    I2CReadBytes(CHIP_ADR, REG_PRESS_XLSB, temporary, 3, TIMEOUT_I2C);
 
     int32_t press = 0;
     press = (temporary[2] << 12) | (temporary[1] << 4) | (temporary[0] >> 4);
@@ -168,47 +168,8 @@ void getPresCalb(unsigned short *P1, short *P2, short *P3, short *P4, short *P5,
     }
 }
 
-/* void getPresCalb(int32_t *P1, int32_t *P2, int32_t *P3, int32_t *P4, int32_t *P5, int32_t *P6, int32_t *P7, int32_t *P8, int32_t *P9){
-    int32_t buff[2];
-
-    I2CReadByte(CHIP_ADR, REG_P1_LSB, buff);
-    I2CReadByte(CHIP_ADR, REG_P1_MSB, &buff[1]);
-    *P1 = (buff[1] << 8) | buff[0];
-
-    I2CReadByte(CHIP_ADR, REG_P2_LSB, buff);
-    I2CReadByte(CHIP_ADR, REG_P2_MSB, &buff[1]);
-    *P2 = (buff[1] << 8) | buff[0];
-
-    I2CReadByte(CHIP_ADR, REG_P3_LSB, buff);
-    I2CReadByte(CHIP_ADR, REG_P3_MSB, &buff[1]);
-    *P3 = (buff[1] << 8) | buff[0];
-
-    I2CReadByte(CHIP_ADR, REG_P1_LSB, buff);
-    I2CReadByte(CHIP_ADR, REG_P1_MSB, &buff[1]);
-    *P4 = (buff[1] << 8) | buff[0];
-
-    I2CReadByte(CHIP_ADR, REG_P2_LSB, buff);
-    I2CReadByte(CHIP_ADR, REG_P2_MSB, &buff[1]);
-    *P5 = (buff[1] << 8) | buff[0];
-
-    I2CReadByte(CHIP_ADR, REG_P3_LSB, buff);
-    I2CReadByte(CHIP_ADR, REG_P3_MSB, &buff[1]);
-    *P6 = (buff[1] << 8) | buff[0];
-
-    I2CReadByte(CHIP_ADR, REG_P1_LSB, buff);
-    I2CReadByte(CHIP_ADR, REG_P1_MSB, &buff[1]);
-    *P7 = (buff[1] << 8) | buff[0];
-
-    I2CReadByte(CHIP_ADR, REG_P2_LSB, buff);
-    I2CReadByte(CHIP_ADR, REG_P2_MSB, &buff[1]);
-    *P8 = (buff[1] << 8) | buff[0];
-
-    I2CReadByte(CHIP_ADR, REG_P3_LSB, buff);
-    I2CReadByte(CHIP_ADR, REG_P3_MSB, &buff[1]);
-    *P9 = (buff[1] << 8) | buff[0];
-} */
-
-void getraws(int32_t *pres, int32_t *temp)
+// Hem sıcaklık hem de basınç raw verilerini alır
+void getRaws(int32_t *pres, int32_t *temp)
 {
     uint8_t temporary[6];
     I2CReadBytes(CHIP_ADR, REG_PRESS_MSB, temporary, 6, TIMEOUT_I2C);
@@ -217,6 +178,7 @@ void getraws(int32_t *pres, int32_t *temp)
     *temp = (temporary[3] << 12) | (temporary[4] << 4) | (temporary[5] >> 4);
 }
 
+// Yükseklik döndürür
 float getAltitude(int32_t pressure, int32_t temperature)
 {
     float preshpa, tempC, altitude;
@@ -224,20 +186,11 @@ float getAltitude(int32_t pressure, int32_t temperature)
     preshpa = pressure * 1.0 / 100;
     tempC = temperature * 1.0 / 100;
     altitude = 44330 * (1.0 - pow(preshpa / seaLevelhPa, 0.1903));
-
-    //Serial2.print("Temp: ");
-    //Serial2.print(tempC);
-    //Serial2.println(" C");
-    //Serial2.print("Pres: ");
-    //Serial2.print(preshpa);
-    //Serial2.println(" hPa");
-    //Serial2.print("Altitude: ");
-    //Serial2.println(altitude);
     
-
     return altitude;
 }
 
+// Test fonksiyonu
 void bmpTest(int32_t *t, int32_t *p, float * a)
 {
     int32_t rawTemp, rawPres, temp, pres;
@@ -245,12 +198,12 @@ void bmpTest(int32_t *t, int32_t *p, float * a)
     float altitude;
     float preshpa, tempc;
 
-    getraws(&rawPres, &rawTemp);
+    getRaws(&rawPres, &rawTemp);
 
-    Serial2.print("rawTemp: ");
-    Serial2.println(rawTemp);
-    Serial2.print("rawPres: ");
-    Serial2.println(rawPres);
+    DEBUG_PRINT(F("rawTemp: "));
+    DEBUG_PRINTLN(rawTemp);
+    DEBUG_PRINT(F("rawPres: "));
+    DEBUG_PRINTLN(rawPres);
 
     temp = getCompensatedTemp(rawTemp, &tfine);
     pres = getCompensatedPres(rawPres, tfine);
@@ -260,15 +213,16 @@ void bmpTest(int32_t *t, int32_t *p, float * a)
     *a = altitude;
     *t = temp;
     *p = pres;
-    Serial2.print(altitude);
-    Serial2.println(" meter");
-    Serial2.println();
-    Serial2.println();
+    DEBUG_PRINT(altitude);
+    DEBUG_PRINTLN(F(" meter"));
+    DEBUG_PRINTLN();
+    DEBUG_PRINTLN();
 }
 
+// Tüm sıcaklık, basınc ve yükseklik verisini döndüren fonksiyon
 float getAltitudeReal(int32_t *temp, int32_t *pres){
     int32_t tfine;
-    getraws(pres, temp);
+    getRaws(pres, temp);
     int32_t tempBuf = *temp;
     int32_t presBuf = *pres;
 

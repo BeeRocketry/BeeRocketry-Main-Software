@@ -94,41 +94,39 @@ Status mpuSetUserControlRegister(struct MPU_REGISTERS *settings){
 }
 
 // Magnetometer Control Register Ayarlamasini Yapar
-Status magSetControlRegister(struct MPU_REGISTERS *settings){
-    uint8_t reg = 0;
+Status magSetControlRegister(bool continuousmode, uint16_t datarate){
+    DEBUG_PRINTLN(F("MMC5603 Register Ayarlamalarina Baslaniyor..."));
+    uint8_t ctrl2;
+    I2CReadByte(MMC5603_CHIPADR, MMC_Control2, &ctrl2, I2C_TIMEOUT);
+    if(continuousmode){
+        I2CWriteByte(MMC5603_CHIPADR, MMC_Control0, 0x80);
+        ctrl2 |= 0x10;
+    }
+    else{
+        ctrl2 &= ~0x10;
+    }
+    I2CWriteByte(MMC5603_CHIPADR, MMC_Control2, ctrl2);
 
-    reg = (reg | ((uint8_t)settings->MAG_Control_Register.operationMode));
-    reg = (reg | ((uint8_t)settings->MAG_Control_Register.outputBit << 4));
+    DEBUG_PRINTLN(F("MMC5603 Mod Ayarlamasi Yapildi..."));
 
-    I2CWriteByte(MAG_CHIPADR, MAG_CTRL, reg);
+    delay(50);
 
-    DEBUG_PRINTLN(F("MPU Control Registeri Ayarlandi..."));
+    if(datarate > 255){
+        datarate = 1000;
+    }
 
-    return MPU_Success;
-}
+    if(datarate == 1000){
+        I2CWriteByte(MMC5603_CHIPADR, MMC_ODR, 255);
+        ctrl2 |= 0x80;
+        I2CWriteByte(MMC5603_CHIPADR, MMC_Control2, ctrl2);
+    }
+    else{
+        I2CWriteByte(MMC5603_CHIPADR, MMC_ODR, datarate);
+        ctrl2 &= ~0x80;
+        I2CWriteByte(MMC5603_CHIPADR, MMC_Control2, ctrl2);
+    }
 
-// Tüm Register Ayarlamalarını Yapan Fonksiyondur
-Status mpuInit(struct MPU_REGISTERS *settings){
-    mpuSetPowerMngmtRegister(settings);
-    delay(20);
-
-    mpuSetUserControlRegister(settings);
-    delay(20);
-
-    mpuSetIntPinRegister(settings);
-    delay(20);
-
-    mpuSetI2CMasterRegister(settings);
-    delay(20);
-
-    mpuSetConfigRegister(settings);
-    delay(20);
-
-    mpuSetGyroConfigRegister(settings);
-    delay(20);
-
-    mpuSetAccConfigRegister(settings);
-    delay(20);
+    DEBUG_PRINTLN(F("MMC5603 ODR Ayarlamasi Yapildi..."));
 
     return MPU_Success;
 }

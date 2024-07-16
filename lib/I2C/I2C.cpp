@@ -1,5 +1,6 @@
 #include <Arduino.h>
 
+#include "debugprinter.h"
 #include "I2C.h"
 
 void I2Cinit(uint32_t SDA, uint32_t SCL)
@@ -8,7 +9,7 @@ void I2Cinit(uint32_t SDA, uint32_t SCL)
     Wire.setSCL(SCL);
     Wire.begin();
     Wire.setClock(400000);
-    Serial2.println("I2C Port Aktifleştirildi.");
+    DEBUG_PRINTLN(F("I2C Port Aktifleştirildi."));
 }
 
 bool I2CWriteByte(uint8_t chipadr, uint8_t regadr, uint8_t data)

@@ -6,7 +6,7 @@
 #define SCL_PIN PB2
 
 #define MPU_CHIPADR 0x68
-#define MAG_CHIPADR 0x0C
+#define MMC5603_CHIPADR 0x30
 
 #define WHOAMI 0x75
 
@@ -60,16 +60,25 @@
 #define GYRO_Z_OUTPUT_MSB 0x47
 #define GYRO_Z_OUTPUT_LSB 0x48
 
-#define MAG_X_OUTPUT_LSB 0x03
-#define MAG_X_OUTPUT_MSB 0x04
-#define MAG_Y_OUTPUT_LSB 0x05
-#define MAG_Y_OUTPUT_MSB 0x06
-#define MAG_Z_OUTPUT_LSB 0x07
-#define MAG_Z_OUTPUT_MSB 0x08
+#define MMC_X_OUTPUT_MSB 0x00
+#define MMC_X_OUTPUT_LSB 0x01
+#define MMC_Y_OUTPUT_MSB 0x02
+#define MMC_Y_OUTPUT_LSB 0x03
+#define MMC_Z_OUTPUT_MSB 0x04
+#define MMC_Z_OUTPUT_LSB 0x05
 
-#define MAG_ASAX 0x10
-#define MAG_ASAY 0x11
-#define MAG_ASAZ 0x12
+#define MMC_X_OUTPUT_Extra 0x06
+#define MMC_Y_OUTPUT_Extra 0x07
+#define MMC_Z_OUTPUT_Extra 0x08
+
+#define MMC_Temp_OUTPUT 0x09
+
+#define MMC_Status 0x18
+#define MMC_ODR 0x1A
+#define MMC_Control0 0x1B
+#define MMC_Control1 0x1C
+#define MMC_Control2 0x1D
+#define MMC_ProductID 0x39
 
 extern float Acc_Resolution;
 extern float AccRange;
@@ -84,30 +93,6 @@ extern float Mag_bias_factory[3];
 extern float Mag_scale[3];
 extern float magnetic_declination;
 extern const uint16_t CALIB_ACCEL_SENSIVITY;
-
-// Prototypes
-
-// MagCalibration.cpp Prototypes
-float getMagRes(MAG_OUTPUTBIT bitmode);
-Status getMagASData(struct MPU_REGISTERS *settings);
-void collectMagDataTo(void);
-Status setMagScalingFactor(struct MPU_REGISTERS *settings);
-
-// MPUCalibration.cpp Prototypes
-Status setGyroScalingFactor(struct MPU_REGISTERS *settings);
-Status setAccelScalingFactor(struct MPU_REGISTERS *settings);
-void CalibrationAccGyro(struct MPU_REGISTERS *settings);
-void AccGyroCalibRegister();
-void AccGyroDataCollection();
-void writeAccOffsets();
-void writeGyroOffsets();
-
-// MPU.cpp Prototypes
-Status setScalingFactors(struct MPU_REGISTERS *settings);
-Status getRawAccGyroTempData(Dof3Data_Int *rawDataAccel, Dof3Data_Int *rawDataGyro, int16_t *temp);
-Status normalizeAccGyroTempData(Dof3Data_Int *rawDataAccel, Dof3Data_Int *rawDataGyro, int16_t *tempint, float *temp, Dof3Data_Float *accel, Dof3Data_Float *gyro);
-Status getMagData(Dof3Data_Int *data);
-Status normalizeMagData(Dof3Data_Int *data, Dof3Data_Float *mag);
 
 typedef enum Status{
     MPU_Success = 0,
@@ -219,22 +204,6 @@ typedef enum MPU_GENERAL_ONOFF{
     MPU_General_OFF = 0b0
 }MPU_GENERAL_ONOFF;
 
-typedef enum MAG_OPERATIONMODE{
-    MAG_OPERATIONMODE_POWERDOWN = 0b0000,
-    MAG_OPERATIONMODE_SINGLEMEASURE = 0b0001,
-    MAG_OPERATIONMODE_CONTINUOUSMEASURE1 = 0b0010,
-    MAG_OPERATIONMODE_CONTINUOUSMEASURE2 = 0b0011,
-    MAG_OPERATIONMODE_EXTERNALTRIG = 0b0100,
-    MAG_OPERATIONMODE_SELFTEST = 0b1000,
-    MAG_OPERATIONMODE_FUSEROM = 0b1111
-}MAG_OPERATIONMODE;
-
-typedef enum MAG_OUTPUTBIT{
-    MAG_OUTPUTBIT_14BIT = 0b0,
-    MAG_OUTPUTBIT_16BIT = 0b1
-}MAG_OUTPUTBIT;
-
-
 struct MPU_CONFIG_REG{
     MPU_FIFOMode fifoMode = FIFO_Overwrite; // 6. bit
     MPU_SYNC syncMode = SYNC_noSync; // 5-3 bit
@@ -273,11 +242,6 @@ struct MPU_POWER_MANAGAMENT1_REG{
     MPU_CLOCK_SELECT clockSet = MPU_CLOCK_GYRO_X;
 };
 
-struct MAG_CONTROL1_REG{
-    MAG_OPERATIONMODE operationMode = MAG_OPERATIONMODE_CONTINUOUSMEASURE2; // 3-0 bit
-    MAG_OUTPUTBIT outputBit = MAG_OUTPUTBIT_16BIT; // 4. bit
-};
-
 struct MPU_REGISTERS{
     MPU_CONFIG_REG MPU_Config_Register;
     MPU_GYRO_CONFIG_REG MPU_GyroConfig_Register;
@@ -287,7 +251,6 @@ struct MPU_REGISTERS{
     MPU_INT_PIN_CFG_REG MPU_INTPin_Register;
     MPU_USER_CONTROL_REG MPU_UserControl_Register;
     MPU_POWER_MANAGAMENT1_REG MPU_PowerManagament1_Register;
-    MAG_CONTROL1_REG MAG_Control_Register;
 };
 
 typedef union Float2Byte{
@@ -311,3 +274,34 @@ typedef struct Dof3Data_Int{
     int16_t y = 0;
     int16_t z = 0;
 }Dof3Data_Int;
+
+typedef struct Dof3Data_IntMAG{
+    int32_t x = 0;
+    int32_t y = 0;
+    int32_t z = 0;
+}Dof3Data_IntMAG;
+
+
+// Prototypes
+
+// MagCalibration.cpp Prototypes
+Status getMagASData(struct MPU_REGISTERS *settings);
+void collectMagDataTo(void);
+Status setMagScalingFactor(struct MPU_REGISTERS *settings);
+
+// MPUCalibration.cpp Prototypes
+Status setGyroScalingFactor(struct MPU_REGISTERS *settings);
+Status setAccelScalingFactor(struct MPU_REGISTERS *settings);
+void CalibrationAccGyro(struct MPU_REGISTERS *settings);
+void AccGyroCalibRegister();
+void AccGyroDataCollection();
+void writeAccOffsets();
+void writeGyroOffsets();
+
+// MPU.cpp Prototypes
+Status setScalingFactors(struct MPU_REGISTERS *settings);
+Status getRawAccGyroTempData(Dof3Data_Int *rawDataAccel, Dof3Data_Int *rawDataGyro, int16_t *temp);
+Status normalizeAccGyroTempData(Dof3Data_Int *rawDataAccel, Dof3Data_Int *rawDataGyro, int16_t *tempint, float *temp, Dof3Data_Float *accel, Dof3Data_Float *gyro);
+Status getMagData(Dof3Data_Int *data);
+Status normalizeMagData(Dof3Data_Int *data, Dof3Data_Float *mag);
+Status mpuInit(struct MPU_REGISTERS *settings);

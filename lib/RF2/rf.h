@@ -1,4 +1,8 @@
 #include <Arduino.h>
+
+#ifndef RFMODULE_H
+#define RFMODULE_H
+
 #include "debugprinter.h"
 
 /*
@@ -14,13 +18,22 @@
         RF_M1  ---  MCU_GPIO (Output)
 ------------------------
 */
-#define RF_TX PA3
-#define RF_RX PA2
-#define RF_AUX PB1
-#define RF_M0 PB3
-#define RF_M1 PB2
+/* Bluepill*/
+#define RF_TX PA9
+#define RF_RX PA10
+#define RF_AUX PA7
+#define RF_M0 PA5
+#define RF_M1 PA6
 
-HardwareSerial SerialRF(RF_TX, RF_RX);
+/* Blackpill
+#define RF_TX PA9
+#define RF_RX PA10
+#define RF_AUX PB2
+#define RF_M0 PB0
+#define RF_M1 PB1
+*/
+
+extern HardwareSerial SerialRF;
 
 /*
 ----------------
@@ -30,7 +43,7 @@ HardwareSerial SerialRF(RF_TX, RF_RX);
 ----------------
 */
 #define MAX_TX_BUFFER_SIZE 58
-#define TIMEOUT_AUX_RESPOND 500
+#define TIMEOUT_AUX_RESPOND 1500
 
 /*
 ---------------------------------------------------------------------
@@ -162,8 +175,9 @@ struct ConfigRF{
 -----------------------
 */
 uint8_t calculateCRC8(const uint8_t *data, size_t length);
+void clearSerialBuffer();
 Status waitAUX(unsigned long timeout);
-Status RFBegin(struct ConfigRF *getConfs, uint8_t HighAddress, uint8_t LowAddress, uint8_t channel = 0x17, RF_UART_PARITY parity = UARTPARITY_8N1, RF_UART_BAUD baud = UARTBAUDRATE_9600, RF_AIR_DATA airdata = AIRDATARATE_03k, RF_TRANS_MODE transmode = TRANSPARENTMODE, RF_IO_MODE IOmode = IO_PUSHPULL, RF_WIRELESS wirelesswake = WIRELESSWAKEUP_250, RF_FEC fecmode = FEC_ON, RF_TRANS_POWER transpower = TRANSMISSIONPOWER_30);
+Status RFBegin(struct ConfigRF *getConfs, uint8_t HighAddress, uint8_t LowAddress, uint8_t channel, RF_UART_PARITY parity, RF_UART_BAUD baud, RF_AIR_DATA airdata, RF_TRANS_MODE transmode, RF_IO_MODE IOmode, RF_WIRELESS wirelesswake, RF_FEC fecmode, RF_TRANS_POWER transpower);
 Status setSettings(struct ConfigRF confs);
 Status getSettings(struct ConfigRF *confs);
 Status receiveSingleData(uint8_t *data);
@@ -185,206 +199,14 @@ Status setUARTBaudRate(struct ConfigRF *config, uint8_t baudrate);
 Status setAirDataRate(struct ConfigRF *config, uint8_t airdatarate);
 Status setSerialBaudRateBegin(struct ConfigRF confs);
 int8_t setSerialParityBegin(struct ConfigRF confs);
+String getTranmissionPower(byte transmissionpower);
+String getFECFilter(byte fecbyte);
+String getWirelessWakeup(byte wireless);
+String getIOMode(byte iotype);
+String getTransmissionType(byte transmissiontype);
+String getAirData(byte airdata);
+String getUARTParity(byte uartparity);
+String getUARTBaudRate(byte uartbaud);
+void managedDelay(unsigned long timeout);
 
-
-/*
-------------------------------
- Yardimci Fonksiyon Tanimlari
-    Ana fonksiyonlarda kullanılacak olan yardimci
-    fonksiyonlardir.
-
-        managedDelay --> Interruptları kesmeden delay sağlar
-        Diğer fonksiyonlar --> Config ayarlarını yazdırırken stringleri döndürecek olan fonksiyonlar
-------------------------------
-*/
-void managedDelay(unsigned long timeout){
-    unsigned long t = millis();
-
-    if((unsigned long) (t + timeout) == 0){
-        t = 0;
-    }
-
-    while((millis()-t) < timeout){
-        yield();
-    }
-}
-
-String getUARTBaudRate(byte uartbaud){
-    switch (uartbaud)
-    {
-    case UARTBAUDRATE_1200:
-        return F("1200 bps");
-        break;
-    
-    case UARTBAUDRATE_2400:
-        return F("2400 bps");
-        break;
-
-    case UARTBAUDRATE_4800:
-        return F("4800 bps");
-        break;
-
-    case UARTBAUDRATE_9600:
-        return F("9600 bps (Varsayilan)");
-        break;
-
-    case UARTBAUDRATE_19200:
-        return F("19200 bps");
-        break;
-
-    case UARTBAUDRATE_38400:
-        return F("38400 bps");
-        break;
-
-    case UARTBAUDRATE_57600:
-        return F("57600 bps");
-        break;
-
-    case UARTBAUDRATE_115200:
-        return F("115200 bps");
-        break;
-    }
-}
-
-String getUARTParity(byte uartparity){
-    switch (uartparity)
-    {
-    case UARTPARITY_8N1:
-        return F("8 Bit, Parity Yok, 1 Durdurma Biti");
-        break;
-    
-    case UARTPARITY_8E1:
-        return F("8 Bit, Çift Parity, 1 Durdurma Biti");
-        break;
-
-    case UARTPARITY_8O1:
-        return F("8 Bit, Tek Parity, 1 Durdurma Biti");
-        break;
-    }
-}
-
-String getAirData(byte airdata){
-    switch (airdata)
-    {
-    case AIRDATARATE_03k:
-        return F("0.3k bps");
-        break;
-    
-    case AIRDATARATE_12k:
-        return F("1.2k bps");
-        break;
-
-    case AIRDATARATE_24k:
-        return F("2.4k bps (Varsayilan)");
-        break;
-
-    case AIRDATARATE_48k:
-        return F("4.8k bps");
-        break;
-
-    case AIRDATARATE_96k:
-        return F("9.6k bps");
-        break;
-
-    case AIRDATARATE_192k:
-        return F("19.2k bps");
-        break;
-    }
-}
-
-String getTransmissionType(byte transmissiontype){
-    switch (transmissiontype)
-    {
-    case TRANSPARENTMODE:
-        return F("Seffaf Mod");
-        break;
-    
-    case FIXEDMODE:
-        return F("Sabit Kanal Modu");
-        break;
-    }
-}
-
-String getIOMode(byte iotype){
-    switch (iotype)
-    {
-    case IO_OPENDRAIN:
-        return F("IO Open Drain Modu");
-        break;
-    
-    case IO_PUSHPULL:
-        return F("IO Push Pull Modu");
-        break;
-    }  
-}
-
-String getWirelessWakeup(byte wireless){
-    switch (wireless)
-    {
-    case WIRELESSWAKEUP_250:
-        return F("250 ms");
-        break;
-    
-    case WIRELESSWAKEUP_500:
-        return F("500 ms");
-        break;
-
-    case WIRELESSWAKEUP_750:
-        return F("750 ms");
-        break;
-    
-    case WIRELESSWAKEUP_1000:
-        return F("1000 ms");
-        break;
-    
-    case WIRELESSWAKEUP_1250:
-        return F("1250 ms");
-        break;
-    
-    case WIRELESSWAKEUP_1500:
-        return F("1500 ms");
-        break;
-
-    case WIRELESSWAKEUP_1750:
-        return F("1750 ms");
-        break;
-
-    case WIRELESSWAKEUP_2000:
-        return F("2000 ms");
-        break;
-    } 
-}
-
-String getFECFilter(byte fecbyte){
-    switch (fecbyte)
-    {
-    case FEC_ON:
-        return F("Aktif");
-        break;
-    
-    case FEC_OFF:
-        return F("Devre Disi");
-        break;
-    }  
-}
-
-String getTranmissionPower(byte transmissionpower){
-    switch (transmissionpower)
-    {
-    case TRANSMISSIONPOWER_21:
-        return F("21 dBm");
-        break;
-    
-    case TRANSMISSIONPOWER_24:
-        return F("24 dBm");
-        break;
-    
-    case TRANSMISSIONPOWER_27:
-        return F("27 dBm");
-        break;
-    
-    case TRANSMISSIONPOWER_30:
-        return F("30 dBm");
-        break;
-    }
-}
+#endif

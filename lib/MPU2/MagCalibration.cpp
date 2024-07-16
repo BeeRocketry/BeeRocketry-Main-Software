@@ -8,64 +8,7 @@ float Mag_bias_factory[3] = {0, 0, 0};
 float Mag_scale[3] = {1., 1., 1.};
 float magnetic_declination = 6.14; // Ankara
 
-// MAGNETOMETER
-// Mag çözünürlüğünü değer olarak döndürür. Yukarıdaki mag çözünürlük ile aynı şeydir.
-float getMagRes(MAG_OUTPUTBIT bitmode){
-    switch (bitmode)
-    {
-    case MAG_OUTPUTBIT_14BIT:
-        return 10. * 4912. / 8190.0;
-
-    case MAG_OUTPUTBIT_16BIT:
-        return 10. * 4912. / 32760.0;
-    
-    default:
-        return 0;
-    }
-}
-
-// Magnetometer'in FuseROM'da bulunan fabrika bias verilerini alır ve işler.
-Status getMagASData(struct MPU_REGISTERS *settings){
-    DEBUG_PRINTLN(F("Mag Bias Factory Değer alimi baslatiliyor..."));
-    delay(1000);
-
-    uint8_t reg = 0;
-    uint8_t rawData[3] = {0, 0, 0};
-
-    settings->MAG_Control_Register.operationMode = MAG_OPERATIONMODE_FUSEROM;
-
-    reg = ((uint8_t)settings->MAG_Control_Register.operationMode);
-    I2CWriteByte(MAG_CHIPADR, MAG_CTRL, reg);
-
-    delay(20);
-
-    I2CReadBytes(MAG_CHIPADR, MAG_ASAX, rawData, 3, TIMEOUT_I2C);
-    
-    Mag_bias_factory[0] = (float)(rawData[0] - 128) * 256. + 1.;
-    Mag_bias_factory[1] = (float)(rawData[1] - 128) * 256. + 1.;
-    Mag_bias_factory[2] = (float)(rawData[2] - 128) * 256. + 1.;
-
-    delay(20);
-
-    settings->MAG_Control_Register.operationMode = MAG_OPERATIONMODE_CONTINUOUSMEASURE2;
-    I2CWriteByte(MAG_CHIPADR, MAG_CTRL, reg);
-
-    delay(20);
-
-    DEBUG_PRINTLN(F("Mag Bias Factory"));
-    DEBUG_PRINT(F(" X:"));
-    DEBUG_PRINTLN(F(Mag_bias_factory[0]));
-    DEBUG_PRINT(F(" Y:"));
-    DEBUG_PRINTLN(F(Mag_bias_factory[1]));
-    DEBUG_PRINT(F(" Z:"));
-    DEBUG_PRINTLN(F(Mag_bias_factory[2]));
-    DEBUG_PRINTLN();
-
-    delay(2000);
-
-    return MPU_Success;
-}
-
+// MAGNETOMETE
 /*
     Mag verilerini işlemek için gerekli olan Mag_bias ve Mag_scale verilerini
     bulur. Bunun için belirli bir süre çalışacak bir fonksiyon çalıştırır.
@@ -150,25 +93,4 @@ void collectMagDataTo(void){
     DEBUG_PRINTLN();
 
     delay(2000);
-}
-
-// Mag çözünürlüğünü verir.
-Status setMagScalingFactor(struct MPU_REGISTERS *settings){
-    DEBUG_PRINTLN(F("Mag Scaling Faktör Ayarlaniyor..."));
-    switch (settings->MAG_Control_Register.outputBit)
-    {
-    case 0b0:
-        Mag_Resolution = 10. * 4912. / 8190.0;
-        break;
-    
-    case 0b1:
-        Mag_Resolution = 10. * 4912. / 32760.0;
-        break;
-
-    default:
-        DEBUG_PRINTLN(F("Mag Scaling Faktör girdisi yanlis..."));
-        return MPU_Error;
-    }
-    DEBUG_PRINTLN(F("Mag Scaling Faktör olarak ayarlandi..."));
-    return MPU_Success;
 }
