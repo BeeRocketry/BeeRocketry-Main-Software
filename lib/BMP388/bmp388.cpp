@@ -4,22 +4,22 @@
 BMP_CalibData *CalibDataPointer;
 BMP_QuantizedCalibData *QuantizedDataPointer;
 
-void BMPInit(){
-    DEBUG_PRINTLN(F("-------------"));
-    DEBUG_PRINTLN(F("    BMP388"));
-    DEBUG_PRINTLN(F("-------------"));
+void BMPInit(BMP_Oversampling pressureOversampling, BMP_Oversampling temperatureOversampling, BMP_IIR_Sampling iirSampling, BMP_ODR odrSampling){
+    DEBUG_PRINTLN(F("------------"));
+    DEBUG_PRINTLN(F("   BMP388"));
+    DEBUG_PRINTLN(F("------------"));
     setReset();
     DEBUG_PRINTLN("BMP388 Resetlendi...");
 
     getCalibrationData();
     DEBUG_PRINTLN(F("Kalibrasyon değerleri başariyla alindi..."));
 
-    setOSR(BMP_OverSampling_8x, BMP_OverSampling_2x);
-    setODR(BMP_ODR_20ms);
+    setOSR(pressureOversampling, temperatureOversampling);
+    setODR(odrSampling);
 
     DEBUG_PRINTLN(F("Oversampling ve ODR başariyla ayarlandi..."));
 
-    setControl(BMP_IIR_1X);
+    setControl(iirSampling);
 
     setFIFOConfig1(BMP_OFF);
     setPowerControl(BMP_ON, BMP_ON, BMP_NormalMode);
@@ -192,4 +192,20 @@ float convertPress2Altitude(float pressure){
     float altitude = fac * (1 - pow((float)(pressure / Pb), (float)exp));
 
     return altitude;
+}
+
+// Tüm BMP388 Dataları Alacak Fonksiyon
+void BMPGetData(float *temperature, float *pressure, float *altitude){
+    uint32_t rawPress, rawTemp;
+    float realTemperature, realPressure, realAltitude;
+
+    getRawData(&rawPress, &rawTemp);
+
+    realTemperature = compensatedTempData(rawTemp);
+    realPressure = compensatedPressData(rawPress);
+    realAltitude = convertPress2Altitude(realPressure);
+    
+    *temperature = realTemperature;
+    *pressure = realPressure;
+    *altitude = realAltitude;
 }

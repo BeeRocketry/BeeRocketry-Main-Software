@@ -1,5 +1,4 @@
 #include "MPU.h"
-#include "MPURegister.h"
 
 float Acc_Resolution = 0;
 float AccRange = 0;
@@ -11,7 +10,7 @@ float Gyro_bias[3] = {0, 0, 0};
 const uint16_t CALIB_ACCEL_SENSIVITY = 16384;
 
 // Gyro çözünürlüğünü verir.
-Status setGyroScalingFactor(struct MPU_REGISTERS *settings){
+MPU_Status setGyroScalingFactor(struct MPU_REGISTERS *settings){
     DEBUG_PRINTLN(F("Gyro Scaling Faktör Ayarlaniyor..."));
     switch (settings->MPU_GyroConfig_Register.gyroScale)
     {
@@ -48,7 +47,7 @@ Status setGyroScalingFactor(struct MPU_REGISTERS *settings){
 }
 
 // İvme çözünürlüğünü verir.
-Status setAccelScalingFactor(struct MPU_REGISTERS *settings){
+MPU_Status setAccelScalingFactor(struct MPU_REGISTERS *settings){
     DEBUG_PRINTLN(F("Accel Scaling Faktör Ayarlaniyor..."));
     switch (settings->MPU_AccConfig_Register.accScale)
     {

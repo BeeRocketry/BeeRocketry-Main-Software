@@ -1,12 +1,15 @@
+#ifndef MPU_H
+#define MPU_H
+
 #include <Arduino.h>
 #include "I2C.h"
 #include "debugprinter.h"
+#include "MMC5603.h"
 
 #define SDA_PIN PA1
 #define SCL_PIN PB2
 
 #define MPU_CHIPADR 0x68
-#define MMC5603_CHIPADR 0x30
 
 #define WHOAMI 0x75
 
@@ -60,26 +63,6 @@
 #define GYRO_Z_OUTPUT_MSB 0x47
 #define GYRO_Z_OUTPUT_LSB 0x48
 
-#define MMC_X_OUTPUT_MSB 0x00
-#define MMC_X_OUTPUT_LSB 0x01
-#define MMC_Y_OUTPUT_MSB 0x02
-#define MMC_Y_OUTPUT_LSB 0x03
-#define MMC_Z_OUTPUT_MSB 0x04
-#define MMC_Z_OUTPUT_LSB 0x05
-
-#define MMC_X_OUTPUT_Extra 0x06
-#define MMC_Y_OUTPUT_Extra 0x07
-#define MMC_Z_OUTPUT_Extra 0x08
-
-#define MMC_Temp_OUTPUT 0x09
-
-#define MMC_Status 0x18
-#define MMC_ODR 0x1A
-#define MMC_Control0 0x1B
-#define MMC_Control1 0x1C
-#define MMC_Control2 0x1D
-#define MMC_ProductID 0x39
-
 extern float Acc_Resolution;
 extern float AccRange;
 extern float Gyro_Resolution;
@@ -94,18 +77,18 @@ extern float Mag_scale[3];
 extern float magnetic_declination;
 extern const uint16_t CALIB_ACCEL_SENSIVITY;
 
-typedef enum Status{
+typedef enum{
     MPU_Success = 0,
     MPU_Timeout,
     MPU_Error
-}Status;
+}MPU_Status;
 
-typedef enum MPU_FIFOMode{
+typedef enum{
     FIFO_Overwrite = 0b0,
     FIFO_Hold = 0b1
-}MPU_FIFOMode;
+} MPU_FIFOMode;
 
-typedef enum MPU_SYNC{
+typedef enum{
     SYNC_noSync = 0b000,
     SYNC_FSync = 0b001,
     SYNC_TempFIFO = 0b010,
@@ -114,9 +97,9 @@ typedef enum MPU_SYNC{
     SYNC_GyroZ = 0b101,
     SYNC_AccX = 0b110,
     SYNC_AccY = 0b111
-}MPU_SYNC;
+} MPU_SYNC;
 
-typedef enum MPU_DLPF{
+typedef enum{
     GYRO_DLPF_0 = 0b000,
     GYRO_DLPF_1 = 0b001,
     GYRO_DLPF_2 = 0b010,
@@ -124,34 +107,34 @@ typedef enum MPU_DLPF{
     GYRO_DLPF_4 = 0b100,
     GYRO_DLPF_5 = 0b101,
     GYRO_DLPF_6 = 0b110,
-}MPU_DLPF;
+} MPU_DLPF;
 
-typedef enum MPU_GYRO_Scale{
+typedef enum{
     GYROScale_250 = 0b00,
     GYROScale_500 = 0b01,
     GYROScale_1000 = 0b10,
     GYROScale_2000 = 0b11,
 }MPU_GYRO_Scale;
 
-typedef enum MPU_FChoice{
+typedef enum{
     GYRO_FChoice_DLPFOn = 0b00,
     GYRO_FChoice_DLPFGyroOn = 0b10,
     GYRO_FChoice_DLPFOff = 0b01
 }MPU_FChoice;
 
-typedef enum MPU_ACC_Scale{
+typedef enum{
     ACCScale_2G = 0b00,
     ACCScale_4G = 0b01,
     ACCScale_8G = 0b10,
     ACCScale_16G = 0b11,
 }MPU_ACC_Scale;
 
-typedef enum MPU_ACC_Fchoice{
+typedef enum{
     ACC_FChoice_DLPFOn = 0b0,
     ACC_FChoice_DLPFOff = 0b1,
 }MPU_ACC_Fchoice;
 
-typedef enum MPU_ACC_DLPF{
+typedef enum{
     ACC_DLPF_0 = 0b000,
     ACC_DLPF_1 = 0b001,
     ACC_DLPF_2 = 0b010,
@@ -161,7 +144,7 @@ typedef enum MPU_ACC_DLPF{
     ACC_DLPF_6 = 0b110,
 }MPU_ACC_DLPF;
 
-typedef enum I2C_MASTER_CLOCK{
+typedef enum{
     I2C_CLOCK_348 = 0b0000,
     I2C_CLOCK_333 = 0b0001,
     I2C_CLOCK_320 = 0b0010,
@@ -180,17 +163,17 @@ typedef enum I2C_MASTER_CLOCK{
     I2C_CLOCK_364 = 0b1111
 }I2C_MASTER_CLOCK;
 
-typedef enum MPU_BYPASS{
+typedef enum{
     MPU_BypassOn = 0b1,
     MPU_BypassOff = 0b0
 }MPU_BYPASS;
 
-typedef enum MPU_Sleep{
+typedef enum{
     MPU_sleep = 0b0,
     MPU_active = 0b1
 }MPU_Sleep;
 
-typedef enum MPU_CLOCK_SELECT{
+typedef enum{
     MPU_CLOCK_8MHzInternal = 0b000,
     MPU_CLOCK_GYRO_X = 0b001,
     MPU_CLOCK_GYRO_Y = 0b010,
@@ -199,7 +182,7 @@ typedef enum MPU_CLOCK_SELECT{
     MPU_CLOCK_192 = 0b110,
 }MPU_CLOCK_SELECT;
 
-typedef enum MPU_GENERAL_ONOFF{
+typedef enum{
     MPU_General_ON = 0b1,
     MPU_General_OFF = 0b0
 }MPU_GENERAL_ONOFF;
@@ -253,55 +236,59 @@ struct MPU_REGISTERS{
     MPU_POWER_MANAGAMENT1_REG MPU_PowerManagament1_Register;
 };
 
-typedef union Float2Byte{
+union Float2Byte{
     float DataFloat;
     uint8_t DataByte[4];
-}Float2Byte;
+};
 
-typedef union Int2Byte{
+union Int2Byte{
     int16_t DataInt;
     uint8_t DataByte[4];
-}Int2Byte;
+};
 
-typedef struct Dof3Data_Float{
+struct Dof3Data_Float{
     float x = 0;
     float y = 0;
     float z = 0;
-}Dof3Data_Float;
+};
 
-typedef struct Dof3Data_Int{
+struct Dof3Data_Int{
     int16_t x = 0;
     int16_t y = 0;
     int16_t z = 0;
-}Dof3Data_Int;
+};
 
-typedef struct Dof3Data_IntMAG{
+struct Dof3Data_IntMAG{
     int32_t x = 0;
     int32_t y = 0;
     int32_t z = 0;
-}Dof3Data_IntMAG;
+};
 
 
 // Prototypes
 
 // MagCalibration.cpp Prototypes
-Status getMagASData(struct MPU_REGISTERS *settings);
 void collectMagDataTo(void);
-Status setMagScalingFactor(struct MPU_REGISTERS *settings);
 
-// MPUCalibration.cpp Prototypes
-Status setGyroScalingFactor(struct MPU_REGISTERS *settings);
-Status setAccelScalingFactor(struct MPU_REGISTERS *settings);
+MPU_Status setGyroScalingFactor(struct MPU_REGISTERS *settings);
+MPU_Status setAccelScalingFactor(struct MPU_REGISTERS *settings);
 void CalibrationAccGyro(struct MPU_REGISTERS *settings);
 void AccGyroCalibRegister();
 void AccGyroDataCollection();
 void writeAccOffsets();
 void writeGyroOffsets();
 
-// MPU.cpp Prototypes
-Status setScalingFactors(struct MPU_REGISTERS *settings);
-Status getRawAccGyroTempData(Dof3Data_Int *rawDataAccel, Dof3Data_Int *rawDataGyro, int16_t *temp);
-Status normalizeAccGyroTempData(Dof3Data_Int *rawDataAccel, Dof3Data_Int *rawDataGyro, int16_t *tempint, float *temp, Dof3Data_Float *accel, Dof3Data_Float *gyro);
-Status getMagData(Dof3Data_Int *data);
-Status normalizeMagData(Dof3Data_Int *data, Dof3Data_Float *mag);
-Status mpuInit(struct MPU_REGISTERS *settings);
+MPU_Status setScalingFactors(struct MPU_REGISTERS *settings);
+MPU_Status getRawAccGyroTempData(Dof3Data_Int *rawDataAccel, Dof3Data_Int *rawDataGyro, int16_t *temp);
+MPU_Status normalizeAccGyroTempData(Dof3Data_Int *rawDataAccel, Dof3Data_Int *rawDataGyro, int16_t *tempint, float *temp, Dof3Data_Float *accel, Dof3Data_Float *gyro);
+MPU_Status mpuInit(struct MPU_REGISTERS *settings);
+
+MPU_Status mpuSetPowerMngmtRegister(struct MPU_REGISTERS *settings);
+MPU_Status mpuSetConfigRegister(struct MPU_REGISTERS *settings);
+MPU_Status mpuSetGyroConfigRegister(struct MPU_REGISTERS *settings);
+MPU_Status mpuSetAccConfigRegister(struct MPU_REGISTERS *settings);
+MPU_Status mpuSetI2CMasterRegister(struct MPU_REGISTERS *settings);
+MPU_Status mpuSetIntPinRegister(struct MPU_REGISTERS *settings);
+MPU_Status mpuSetUserControlRegister(struct MPU_REGISTERS *settings);
+
+#endif

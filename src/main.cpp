@@ -3,10 +3,13 @@
 #define DEBUG_MODE
 
 #include <HardwareSerial.h>
+#include <TinyGPS++.h>
+#include <SD.h>
 #include "main.h"
 #include "rf.h"
 #include "bmp388.h"
-//#include "MPU.h"
+#include "MPU.h"
+#include "MMC5603.h"
 
 // Ana algoritma devresi için genel obje tanımlamaları değişken tanımları
 bool RampaDeger = true;

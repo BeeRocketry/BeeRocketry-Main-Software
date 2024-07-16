@@ -43,6 +43,7 @@ uint8_t I2CReadBytes(uint8_t chipadr, uint8_t regadr, uint8_t *temp, uint8_t len
         uint32_t start = millis();
         while(Wire.available()){
             if(timeout == 0 || millis() - start > timeout){
+                DEBUG_PRINTLN(F("I2C ReadByte timeout süresini asti..."));
                 return -1;
             }
 

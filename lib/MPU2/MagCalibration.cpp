@@ -1,5 +1,4 @@
 #include "MPU.h"
-#include "MPURegister.h"
 
 float Mag_Resolution = 0;
 
@@ -15,6 +14,8 @@ float magnetic_declination = 6.14; // Ankara
     Maksimum ve minimum değerleri bularak bunlardan bias ve scale verilerini
     çıkarır.
 */
+
+/*
 void collectMagDataTo(void){
     DEBUG_PRINTLN(F("Magnetometer Kalibrasyonu için Data toplama baslatiliyor..."));
     DEBUG_PRINTLN(F("Cihazi 8 seklinde döndürünüz..."));
@@ -93,4 +94,4 @@ void collectMagDataTo(void){
     DEBUG_PRINTLN();
 
     delay(2000);
-}
+}*/

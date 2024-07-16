@@ -145,7 +145,7 @@ typedef struct{
 extern BMP_CalibData *CalibDataPointer;
 extern BMP_QuantizedCalibData *QuantizedDataPointer;
 
-void BMPInit();
+void BMPInit(BMP_Oversampling pressureOversampling, BMP_Oversampling temperatureOversampling, BMP_IIR_Sampling iirSampling, BMP_ODR odrSampling);
 void getCalibrationData();
 void setFIFOConfig1(BMP_ONOFF fifoMode);
 void setPowerControl(BMP_ONOFF pressureEnable, BMP_ONOFF tempEnable, BMP_Mode bmpMode);
@@ -157,3 +157,4 @@ void getRawData(uint32_t *rawpress, uint32_t *rawtemperature);
 float compensatedTempData(uint32_t rawTemperature);
 float compensatedPressData(uint32_t rawPressure);
 float convertPress2Altitude(float pressure);
+void BMPGetData(float *temperature, float *pressure, float *altitude);

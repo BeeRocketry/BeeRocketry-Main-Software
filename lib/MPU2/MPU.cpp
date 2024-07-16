@@ -1,8 +1,7 @@
 #include "MPU.h"
-#include "MPURegister.h"
 
 // Tüm Register Ayarlamalarını Yapan Fonksiyondur
-Status mpuInit(struct MPU_REGISTERS *settings){
+MPU_Status mpuInit(struct MPU_REGISTERS *settings){
     mpuSetPowerMngmtRegister(settings);
     delay(20);
 
@@ -28,18 +27,16 @@ Status mpuInit(struct MPU_REGISTERS *settings){
 }
 
 // Çözünürlük ayarlamalarını yapar.
-Status setScalingFactors(struct MPU_REGISTERS *setting){
+MPU_Status setScalingFactors(struct MPU_REGISTERS *setting){
     setGyroScalingFactor(setting);
     delay(10);
     setAccelScalingFactor(setting);
-    delay(10);
-    setMagScalingFactor(setting);
     delay(10);
     return MPU_Success;
 }
 
 // Ham ivme, gyro ve sıcaklık verilerini alır.
-Status getRawAccGyroTempData(Dof3Data_Int *rawDataAccel, Dof3Data_Int *rawDataGyro, int16_t *temp){
+MPU_Status getRawAccGyroTempData(Dof3Data_Int *rawDataAccel, Dof3Data_Int *rawDataGyro, int16_t *temp){
     uint8_t buffer[14];
     I2CReadBytes(MPU_CHIPADR, ACCEL_X_OUTPUT_MSB, buffer, 14, TIMEOUT_I2C);
 
@@ -57,7 +54,7 @@ Status getRawAccGyroTempData(Dof3Data_Int *rawDataAccel, Dof3Data_Int *rawDataGy
 }
 
 // İvme, gyro ve sicaklik verilerini işler.
-Status normalizeAccGyroTempData(Dof3Data_Int *rawDataAccel, Dof3Data_Int *rawDataGyro, int16_t *tempint, float *temp, Dof3Data_Float *accel, Dof3Data_Float *gyro){
+MPU_Status normalizeAccGyroTempData(Dof3Data_Int *rawDataAccel, Dof3Data_Int *rawDataGyro, int16_t *tempint, float *temp, Dof3Data_Float *accel, Dof3Data_Float *gyro){
     *temp = (float)(*tempint) / 333.87f + 21.0f;
 
     accel->x = (float)rawDataAccel->x / Acc_Resolution;
@@ -71,24 +68,95 @@ Status normalizeAccGyroTempData(Dof3Data_Int *rawDataAccel, Dof3Data_Int *rawDat
     return MPU_Success;
 }
 
-// Mag verilerini alır.
-Status getMagData(Dof3Data_IntMAG *data, Dof3Data_Float *magdata){
-    uint8_t buffer[9];
-    I2CReadBytes(MMC5603_CHIPADR, MMC_X_OUTPUT_MSB, buffer, 9, TIMEOUT_I2C);
+// Power Management Register Ayarlamasını Yapar
+MPU_Status mpuSetPowerMngmtRegister(struct MPU_REGISTERS *settings){
+    uint8_t reg = 0;
 
-    data->x = (uint32_t)buffer[0] << 12 | (uint32_t)buffer[1] << 4 | (uint32_t)buffer[6] >> 4;
-    data->y = (uint32_t)buffer[2] << 12 | (uint32_t)buffer[3] << 4 | (uint32_t)buffer[7] >> 4;
-    data->z = (uint32_t)buffer[4] << 12 | (uint32_t)buffer[5] << 4 | (uint32_t)buffer[8] >> 4;
+    reg = (reg | ((uint8_t)settings->MPU_PowerManagament1_Register.activationmode << 6));
+    reg = (reg | ((uint8_t)settings->MPU_PowerManagament1_Register.clockSet));
 
-    data->x -= (uint32_t)1 << 19;
-    data->y -= (uint32_t)1 << 19;
-    data->z -= (uint32_t)1 << 19;
+    I2CWriteByte(MPU_CHIPADR, POWER_MANAGEMENT, reg);
 
-    magdata->x = (float)data->x * 0.00625;
-    magdata->y = (float)data->y * 0.00625;
-    magdata->z = (float)data->z * 0.00625;
+    return MPU_Success;
+}
 
-    
+// Config Register Ayarlamasını Yapar
+MPU_Status mpuSetConfigRegister(struct MPU_REGISTERS *settings){
+    uint8_t reg = 0;
+
+    reg = (reg | ((uint8_t)settings->MPU_Config_Register.fifoMode << 6));
+    reg = (reg | ((uint8_t)settings->MPU_Config_Register.syncMode << 3));
+    reg = (reg | ((uint8_t)settings->MPU_Config_Register.dlpfMode));
+
+    I2CWriteByte(MPU_CHIPADR, CONFIG, reg);
+
+    return MPU_Success;
+}
+
+// Gyro Config Register Ayarlamasını Yapar
+MPU_Status mpuSetGyroConfigRegister(struct MPU_REGISTERS *settings){
+    uint8_t reg = 0;
+
+    reg = (reg | ((uint8_t)settings->MPU_GyroConfig_Register.gyroScale << 3));
+    reg = (reg | ((uint8_t)settings->MPU_GyroConfig_Register.dlpfchoice));
+
+    I2CWriteByte(MPU_CHIPADR, CONFIG_GYRO, reg);
+
+    return MPU_Success;
+}
+
+// İvme Config Register Ayarlamasini Yapar
+MPU_Status mpuSetAccConfigRegister(struct MPU_REGISTERS *settings){
+    uint8_t reg = 0;
+
+    reg = (reg | ((uint8_t)settings->MPU_AccConfig_Register.accScale << 3));
+
+    I2CWriteByte(MPU_CHIPADR, CONFIG_ACCEL, reg);
+
+    delay(20);
+
+    reg = 0;
+
+    reg = (reg | ((uint8_t)settings->MPU_AccConfig_2_Register.accDLPFmode << 3));
+    reg = (reg | ((uint8_t)settings->MPU_AccConfig_2_Register.accDLPFSettings));
+
+    I2CWriteByte(MPU_CHIPADR, CONFIG_ACCEL_2, reg);
+
+    return MPU_Success;
+}
+
+// I2C Master Register Ayarlamasını Yapar
+MPU_Status mpuSetI2CMasterRegister(struct MPU_REGISTERS *settings){
+    uint8_t reg = 0;
+
+    reg = (reg | ((uint8_t)settings->MPU_I2CMaster_Register.masterClock));
+
+    I2CWriteByte(MPU_CHIPADR, I2C_MASTER_CONTROL, reg);
+
+    return MPU_Success;
+}
+
+// Interrupt Pin Register Ayarlamasini Yapar
+MPU_Status mpuSetIntPinRegister(struct MPU_REGISTERS *settings){
+    uint8_t reg = 0;
+
+    reg = (reg | ((uint8_t)settings->MPU_INTPin_Register.i2cbypassMode << 1));
+
+    I2CWriteByte(MPU_CHIPADR, INT_PIN_CFG, reg);
+
+    return MPU_Success;
+}
+
+// User Control Register Ayarlamasini Yapar
+MPU_Status mpuSetUserControlRegister(struct MPU_REGISTERS *settings){
+    uint8_t reg = 0;
+
+    reg = (reg | ((uint8_t)settings->MPU_UserControl_Register.fifoEnable << 6));
+    reg = (reg | ((uint8_t)settings->MPU_UserControl_Register.i2cMasterEnable << 5));
+
+    I2CWriteByte(MPU_CHIPADR, USER_CTRL, reg);
+
+    DEBUG_PRINTLN(F("MPU USER Control Registeri Ayarlandi..."));
 
     return MPU_Success;
 }
