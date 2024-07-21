@@ -51,21 +51,21 @@ void getCalibrationData(){
     CalibDataPointer->P10 = (int8_t)buffer[19];
     CalibDataPointer->P11 = (int8_t)buffer[20];
 
-    QuantizedDataPointer->T1 = (double)CalibDataPointer->T1 / 2e-8;
-    QuantizedDataPointer->T2 = (double)CalibDataPointer->T2 / 2e30;
-    QuantizedDataPointer->T3 = (double)CalibDataPointer->T3 / 2e48;
+    QuantizedDataPointer->T1 = (double)CalibDataPointer->T1 / 0.00390625f;
+    QuantizedDataPointer->T2 = (double)CalibDataPointer->T2 / 1073741824.0f;
+    QuantizedDataPointer->T3 = (double)CalibDataPointer->T3 / 281474976710656.0f;
 
-    QuantizedDataPointer->P1 = ((double)CalibDataPointer->P1 - 2e14) / 2e20;
-    QuantizedDataPointer->P2 = ((double)CalibDataPointer->P2 - 2e14) / 2e29;
-    QuantizedDataPointer->P3 = (double)CalibDataPointer->P3 / 2e32;
-    QuantizedDataPointer->P4 = (double)CalibDataPointer->P4 / 2e37;
-    QuantizedDataPointer->P5 = (double)CalibDataPointer->P5 / 2e-3;
-    QuantizedDataPointer->P6 = (double)CalibDataPointer->P6 / 2e6;
-    QuantizedDataPointer->P7 = (double)CalibDataPointer->P7 / 2e8;
-    QuantizedDataPointer->P8 = (double)CalibDataPointer->P8 / 2e15;
-    QuantizedDataPointer->P9 = (double)CalibDataPointer->P9 / 2e48;
-    QuantizedDataPointer->P10 = (double)CalibDataPointer->P10 / 2e48;
-    QuantizedDataPointer->P11 = (double)CalibDataPointer->P11 / 2e65;
+    QuantizedDataPointer->P1 = ((double)CalibDataPointer->P1 - 16384) / 1048576.0f;
+    QuantizedDataPointer->P2 = ((double)CalibDataPointer->P2 - 16384) / 536870912.0f;
+    QuantizedDataPointer->P3 = (double)CalibDataPointer->P3 / 4294967296.0f;
+    QuantizedDataPointer->P4 = (double)CalibDataPointer->P4 / 137438953472.0f;
+    QuantizedDataPointer->P5 = (double)CalibDataPointer->P5 / 0.125f;
+    QuantizedDataPointer->P6 = (double)CalibDataPointer->P6 / 64.0f;
+    QuantizedDataPointer->P7 = (double)CalibDataPointer->P7 / 256.0f;
+    QuantizedDataPointer->P8 = (double)CalibDataPointer->P8 / 32768.0f;
+    QuantizedDataPointer->P9 = (double)CalibDataPointer->P9 / 281474976710656.0f;
+    QuantizedDataPointer->P10 = (double)CalibDataPointer->P10 / 281474976710656.0f;
+    QuantizedDataPointer->P11 = (double)CalibDataPointer->P11 / 36893488147419103232.0f;
 
     free(CalibDataPointer);
     CalibDataPointer = NULL;

@@ -258,12 +258,6 @@ struct Dof3Data_Int{
     int16_t z = 0;
 };
 
-struct Dof3Data_IntMAG{
-    int32_t x = 0;
-    int32_t y = 0;
-    int32_t z = 0;
-};
-
 
 // Prototypes
 

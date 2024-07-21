@@ -1,3 +1,6 @@
+#ifndef BMP388_H
+#define BMP388_H
+
 #include <Arduino.h>
 #include "I2C.h"
 
@@ -158,3 +161,5 @@ float compensatedTempData(uint32_t rawTemperature);
 float compensatedPressData(uint32_t rawPressure);
 float convertPress2Altitude(float pressure);
 void BMPGetData(float *temperature, float *pressure, float *altitude);
+
+#endif

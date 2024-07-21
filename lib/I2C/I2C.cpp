@@ -3,7 +3,7 @@
 #include "debugprinter.h"
 #include "I2C.h"
 
-void I2Cinit(uint32_t SDA, uint32_t SCL)
+void I2CBegin(uint32_t SDA, uint32_t SCL)
 {
     Wire.setSDA(SDA);
     Wire.setSCL(SCL);

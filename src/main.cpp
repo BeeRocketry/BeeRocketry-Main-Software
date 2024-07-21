@@ -3,13 +3,14 @@
 #define DEBUG_MODE
 
 #include <HardwareSerial.h>
-#include <TinyGPS++.h>
-#include <SD.h>
+//#include <TinyGPS++.h>
+//#include <SD.h>
+#include <SPI.h>
 #include "main.h"
 #include "rf.h"
 #include "bmp388.h"
-#include "MPU.h"
 #include "MMC5603.h"
+#include "MPU.h"
 
 // Ana algoritma devresi için genel obje tanımlamaları değişken tanımları
 bool RampaDeger = true;
@@ -28,6 +29,9 @@ int lasttime;
 
 uint8_t cnt = 0;
 
+Dof3Data_IntMAG rawData;
+Dof3Data_FloatMMC magData;
+
 // Float byte dizisi arasında dönüşüm yapmak için
 union float2binary
 {
@@ -40,38 +44,120 @@ union float2binary
 // float rampaDegerFonksiyonu(void);
 // extern "C" void SystemClock_Config();
 
-HardwareSerial SeriPort(PA3, PA2);
+HardwareSerial SeriPort(PIN_UART2_RX, PIN_UART2_TX);
+long prevTime;
+bool check = 0;
 
 void setup()
 {
   SeriPort.begin(9600);
   DEBUG_PRINTLN(F("Seri Port Baslatildi..."));
+  //I2CBegin(PIN_I2C1_SDA, PIN_I2C1_SCL);
+  //DEBUG_PRINTLN(F("I2C Port Baslatildi..."));
+  pinMode(LED_BUILTIN, OUTPUT);
+  //MMCBegin(true, 255);
+  //BMPInit(BMP_OverSampling_8x, BMP_OverSampling_2x, BMP_IIR_OFF, BMP_ODR_40ms);
   //SystemClock_Config();
   struct ConfigRF rfayarlari;
-  RFBegin(&rfayarlari, 0x01, 0x06, 23U, UARTPARITY_8N1, UARTBAUDRATE_9600, AIRDATARATE_03k, FIXEDMODE, IO_PUSHPULL, WIRELESSWAKEUP_250, FEC_ON, TRANSMISSIONPOWER_30);
-  delay(1000);
+  RFBegin(&rfayarlari, 0x03, 0x05, 23U, UARTPARITY_8N1, UARTBAUDRATE_9600, AIRDATARATE_03k, FIXEDMODE, IO_PUSHPULL, WIRELESSWAKEUP_250, FEC_ON, TRANSMISSIONPOWER_30);
+  managedDelay(1000);
+  digitalWrite(LED_BUILTIN, HIGH);
+  prevTime = millis();
+  //uint8_t teeee;
+  //I2CReadByte(CHIP_ADR, 0x00, &teeee, TIMEOUT_I2C);
+
+  //DEBUG_PRINT(F("CHIP ID: "));
+  //DEBUG_PRINTLN(teeee, HEX);
 }
 
 void loop()
 {
-  /*delay(50);
-  altitude = getAltitudeReal(&sicaklik, &basinc);
-  Serial2.print("Irtifa: ");
-  Serial2.println(altitude);
-  Serial2.println();*/
+  uint8_t buffersend[13];
+  uint8_t crc;
+  float2binary converter;
+  //uint32_t tempraw, presraw;
+  float press, altitude, temp;
+  if(millis() > prevTime + 2000){
+    prevTime = millis();
+    if(check){
+      digitalWrite(LED_BUILTIN, HIGH);
+      check = 0;
+    }
+    else{
+      digitalWrite(LED_BUILTIN, LOW);
+      check = 1;
+    }
+  }
 
-  /*sendFixedSingleData(0x01, 0x06, 23U, cnt);
-  DEBUG_PRINT(F("Cnt: "));
-  DEBUG_PRINTLN(cnt);
-  cnt += 3;
+  /*BMPGetData(&temp, &press, &altitude);
+
+  DEBUG_PRINT(F("Sicaklik: "));
+  DEBUG_PRINT(temp);
+  DEBUG_PRINT(F("   Basinc: "));
+  DEBUG_PRINT(press);
+  DEBUG_PRINT(F("   Yukseklik: "));
+  DEBUG_PRINTLN(altitude);*/
+  /*getMagData(&rawData, &magData);
+
+  DEBUG_PRINTLN(F("MMC Mag Data"));
+  DEBUG_PRINT(F(" X:"));
+  DEBUG_PRINTLN(magData.x);
+  DEBUG_PRINT(F(" Y:"));
+  DEBUG_PRINTLN(magData.y);
+  DEBUG_PRINT(F(" Z:"));
+  DEBUG_PRINTLN(magData.z);
+  DEBUG_PRINTLN( );*/
+
+  /*converter.floating = press;
+  for(int i = 0; i < 4; i++){
+    buffersend[i] = converter.binary[i];
+  }
+  converter.floating = temp;
+  for(int i = 0; i < 4; i++){
+    buffersend[i+4] = converter.binary[i];
+  }
+  converter.floating = altitude;
+  for(int i = 0; i < 4; i++){
+    buffersend[i+8] = converter.binary[i];
+  }
+  crc = calculateCRC8(buffersend, 12);
+  buffersend[12] = crc;
+  DEBUG_PRINT(F("CRC: "));
+  DEBUG_PRINTLN(crc);
+
+  sendFixedDataPacket(0x03, 0x05, 23U, buffersend, sizeof(buffersend));
   managedDelay(500);*/
 
-  uint8_t data;
-  Status res = receiveSingleData(&data);
-  if(res != E32_Timeout){
-    DEBUG_PRINT(F("Data: "));
-    DEBUG_PRINTLN(data);
+  Status res = receiveDataPacket(buffersend, sizeof(buffersend));
+  for(int i = 0; i < 4; i++){
+    converter.binary[i] = buffersend[i];
   }
+  press = converter.floating;
+  for(int i = 0; i < 4; i++){
+    converter.binary[i] = buffersend[i+4];
+  }
+  temp = converter.floating;
+  for(int i = 0; i < 4; i++){
+    converter.binary[i] = buffersend[i+8];
+  }
+  altitude = converter.floating;
+  crc = buffersend[12];
+  if(res != E32_Timeout){
+    if(crc == calculateCRC8(buffersend, 12)){
+      DEBUG_PRINTLN(F("Data: "));
+      DEBUG_PRINT(F(" Sicaklik: "));
+      DEBUG_PRINT(temp);
+      DEBUG_PRINT(F("   Basinc: "));
+      DEBUG_PRINT(press);
+      DEBUG_PRINT(F("   Yukseklik: "));
+      DEBUG_PRINTLN(altitude);
+      DEBUG_PRINTLN();
+    }
+    else{
+      DEBUG_PRINTLN(F("CRC Uyusmuyor..."));
+    }
+  }
+  clearSerialBuffer();
   managedDelay(500);
 }
 

@@ -3,7 +3,6 @@
 
 #include <Arduino.h>
 #include "debugprinter.h"
-#include "MPU.h"
 #include "I2C.h"
 
 #define MMC5603_CHIPADR 0x30
@@ -27,5 +26,20 @@
 #define MMC_Control1 0x1C
 #define MMC_Control2 0x1D
 #define MMC_ProductID 0x39
+
+struct Dof3Data_IntMAG{
+    int32_t x = 0;
+    int32_t y = 0;
+    int32_t z = 0;
+};
+
+struct Dof3Data_FloatMMC{
+    float x = 0;
+    float y = 0;
+    float z = 0;
+};
+
+void MMCBegin(bool continuousmode, uint16_t datarate);
+void getMagData(Dof3Data_IntMAG *data, Dof3Data_FloatMMC *magdata);
 
 #endif

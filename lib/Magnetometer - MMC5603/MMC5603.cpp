@@ -1,7 +1,7 @@
 #include "MMC5603.h"
 
 // Magnetometer Control Register Ayarlamasini Yapar
-MPU_Status magSetControlRegister(bool continuousmode, uint16_t datarate){
+void MMCBegin(bool continuousmode, uint16_t datarate){
     DEBUG_PRINTLN(F("MMC5603 Register Ayarlamalarina Baslaniyor..."));
     uint8_t ctrl2;
     I2CReadByte(MMC5603_CHIPADR, MMC_Control2, &ctrl2, I2C_TIMEOUT);
@@ -34,12 +34,10 @@ MPU_Status magSetControlRegister(bool continuousmode, uint16_t datarate){
     }
 
     DEBUG_PRINTLN(F("MMC5603 ODR Ayarlamasi Yapildi..."));
-
-    return MPU_Success;
 }
 
 // Mag verilerini alır.
-MPU_Status getMagData(Dof3Data_IntMAG *data, Dof3Data_Float *magdata){
+void getMagData(Dof3Data_IntMAG *data, Dof3Data_FloatMMC *magdata){
     uint8_t buffer[9];
     I2CReadBytes(MMC5603_CHIPADR, MMC_X_OUTPUT_MSB, buffer, 9, TIMEOUT_I2C);
 
@@ -54,6 +52,4 @@ MPU_Status getMagData(Dof3Data_IntMAG *data, Dof3Data_Float *magdata){
     magdata->x = (float)data->x * 0.00625;
     magdata->y = (float)data->y * 0.00625;
     magdata->z = (float)data->z * 0.00625;
-
-    return MPU_Success;
 }

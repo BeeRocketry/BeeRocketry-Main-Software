@@ -310,6 +310,7 @@ Status setSettings(struct ConfigRF confs){
 ------------------------
 */
 Status getSettings(struct ConfigRF *confs){
+    clearSerialBuffer();
     uint8_t SpedByte = 0, OptionByte = 0;
     uint8_t MesArr[6], sendpack[3];
     uint8_t receivedCRC;

@@ -1,7 +1,7 @@
-#include <Arduino.h>
+#ifndef RF_H
+#define RF_H
 
-#ifndef RFMODULE_H
-#define RFMODULE_H
+#include <Arduino.h>
 
 #include "debugprinter.h"
 
@@ -18,20 +18,20 @@
         RF_M1  ---  MCU_GPIO (Output)
 ------------------------
 */
-/* Bluepill*/
-#define RF_TX PA9
-#define RF_RX PA10
+/* Blackpill Transmitter
+#define RF_TX PB6
+#define RF_RX PB7
 #define RF_AUX PA7
 #define RF_M0 PA5
-#define RF_M1 PA6
+#define RF_M1 PA6*/
 
-/* Blackpill
+/* Blackpill Receiver*/
 #define RF_TX PA9
 #define RF_RX PA10
 #define RF_AUX PB2
 #define RF_M0 PB0
 #define RF_M1 PB1
-*/
+
 
 extern HardwareSerial SerialRF;
 
