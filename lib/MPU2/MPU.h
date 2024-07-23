@@ -169,8 +169,8 @@ typedef enum{
 }MPU_BYPASS;
 
 typedef enum{
-    MPU_sleep = 0b0,
-    MPU_active = 0b1
+    MPU_sleep = 0b1,
+    MPU_active = 0b0
 }MPU_Sleep;
 
 typedef enum{

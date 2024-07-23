@@ -39,7 +39,17 @@ struct Dof3Data_FloatMMC{
     float z = 0;
 };
 
+extern float magHighCalValue[3];
+extern float magSoftCalValue[3][3];
+
 void MMCBegin(bool continuousmode, uint16_t datarate);
 void getMagData(Dof3Data_IntMAG *data, Dof3Data_FloatMMC *magdata);
+void getHighCalibrated(Dof3Data_IntMAG *magData);
+void getSoftCalibrateda(Dof3Data_IntMAG *magData);
+void vectorNormalize(Dof3Data_IntMAG *magData);
+void getRawMagData(Dof3Data_IntMAG *data);
+void compensatedMagData(Dof3Data_IntMAG data, Dof3Data_FloatMMC *magdata);
+float vectorDotProduct(Dof3Data_IntMAG *a, Dof3Data_IntMAG *b);
+void vectorNormalize(Dof3Data_IntMAG *magData);
 
 #endif

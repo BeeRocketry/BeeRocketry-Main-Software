@@ -1,3 +1,6 @@
+#ifndef DEBUG_PRINTER_H
+#define DEBUG_PRINTER_H
+
 /*
 --------------------------------------------------------------------
  Debug Printer Makrosu
@@ -17,4 +20,6 @@ extern HardwareSerial SeriPort;
 #else
     #define DEBUG_PRINT(...) {}
     #define DEBUG_PRINTLN(...) {}
+#endif
+
 #endif

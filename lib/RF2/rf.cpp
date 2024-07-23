@@ -430,6 +430,7 @@ Status receiveDataPacket(uint8_t *data, size_t size){
     }
 
     SerialRF.readBytes(data, size);
+    clearSerialBuffer();
     return E32_Success;
 }
 

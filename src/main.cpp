@@ -2,6 +2,10 @@
 
 #define DEBUG_MODE
 
+#undef Serial
+#define Serial SeriPort
+
+#include "debugprinter.h"
 #include <HardwareSerial.h>
 //#include <TinyGPS++.h>
 //#include <SD.h>
@@ -11,6 +15,9 @@
 #include "bmp388.h"
 #include "MMC5603.h"
 #include "MPU.h"
+#include "ICM20948.h"
+
+void motionCalRawPrint(Dof3Data_Int accData, Dof3Data_Int gyroData, Dof3Data_FloatMMC magData);
 
 // Ana algoritma devresi için genel obje tanımlamaları değişken tanımları
 bool RampaDeger = true;
@@ -18,7 +25,6 @@ bool IrtifaSinir = false;
 bool KurtarmaSistemi = false;
 float rampaDegerIrtifa = 0;
 float altitude;
-int32_t sicaklik, basinc;
 float pitch, roll;
 
 float altbuf[40];
@@ -28,9 +34,6 @@ int buffcnt = 0;
 int lasttime;
 
 uint8_t cnt = 0;
-
-Dof3Data_IntMAG rawData;
-Dof3Data_FloatMMC magData;
 
 // Float byte dizisi arasında dönüşüm yapmak için
 union float2binary
@@ -45,21 +48,27 @@ union float2binary
 // extern "C" void SystemClock_Config();
 
 HardwareSerial SeriPort(PIN_UART2_RX, PIN_UART2_TX);
+
 long prevTime;
 bool check = 0;
 
 void setup()
 {
-  SeriPort.begin(9600);
+  MPU_REGISTERS settingsMPU;
+  SeriPort.begin(115200);
   DEBUG_PRINTLN(F("Seri Port Baslatildi..."));
   //I2CBegin(PIN_I2C1_SDA, PIN_I2C1_SCL);
-  //DEBUG_PRINTLN(F("I2C Port Baslatildi..."));
+  I2CBegin(PB7, PB6); // Bluepill
+  DEBUG_PRINTLN(F("I2C Port Baslatildi..."));
   pinMode(LED_BUILTIN, OUTPUT);
-  //MMCBegin(true, 255);
+  MMCBegin(true, 1000);
+  DEBUG_PRINTLN(F("MMC Port Baslatildi..."));
+  mpuInit(&settingsMPU);
+  DEBUG_PRINTLN(F("MPU Port Baslatildi..."));
   //BMPInit(BMP_OverSampling_8x, BMP_OverSampling_2x, BMP_IIR_OFF, BMP_ODR_40ms);
   //SystemClock_Config();
-  struct ConfigRF rfayarlari;
-  RFBegin(&rfayarlari, 0x03, 0x05, 23U, UARTPARITY_8N1, UARTBAUDRATE_9600, AIRDATARATE_03k, FIXEDMODE, IO_PUSHPULL, WIRELESSWAKEUP_250, FEC_ON, TRANSMISSIONPOWER_30);
+  //struct ConfigRF rfayarlari;
+  //RFBegin(&rfayarlari, 0x03, 0x05, 23U, UARTPARITY_8N1, UARTBAUDRATE_9600, AIRDATARATE_03k, FIXEDMODE, IO_PUSHPULL, WIRELESSWAKEUP_250, FEC_ON, TRANSMISSIONPOWER_30);
   managedDelay(1000);
   digitalWrite(LED_BUILTIN, HIGH);
   prevTime = millis();
@@ -72,11 +81,22 @@ void setup()
 
 void loop()
 {
+  Dof3Data_IntMAG rawData;
+  Dof3Data_FloatMMC magData;
+
+  Dof3Data_Int rawGyro;
+  Dof3Data_Int rawAcc;
+
+  Dof3Data_Float gyroff;
+  Dof3Data_Float accff;
+  uint8_t tt;
   uint8_t buffersend[13];
   uint8_t crc;
+  int16_t temp;
+  float tempFloat;
   float2binary converter;
   //uint32_t tempraw, presraw;
-  float press, altitude, temp;
+  //float press, altitude, temp;
   if(millis() > prevTime + 2000){
     prevTime = millis();
     if(check){
@@ -89,6 +109,10 @@ void loop()
     }
   }
 
+  getRawAccGyroTempData(&rawAcc, &rawGyro, &temp);
+  normalizeAccGyroTempData(&rawAcc, &rawGyro, &temp, &tempFloat, &accff, &gyroff);
+  managedDelay(5);
+
   /*BMPGetData(&temp, &press, &altitude);
 
   DEBUG_PRINT(F("Sicaklik: "));
@@ -97,13 +121,46 @@ void loop()
   DEBUG_PRINT(press);
   DEBUG_PRINT(F("   Yukseklik: "));
   DEBUG_PRINTLN(altitude);*/
-  /*getMagData(&rawData, &magData);
+  //getMagData(&rawData, &magData);
+  getRawMagData(&rawData);
+  getHighCalibrated(&rawData);
+  getSoftCalibrateda(&rawData);
+  compensatedMagData(rawData, &magData);
 
-  DEBUG_PRINTLN(F("MMC Mag Data"));
+  motionCalRawPrint(rawAcc, rawGyro, magData);
+
+  /*DEBUG_PRINT("Counter:");
+  DEBUG_PRINTLN(cnt++);
+
+  DEBUG_PRINTLN(F("MPU Acc Data"));
+  DEBUG_PRINT(F(">X:"));
+  DEBUG_PRINTLN(accff.x);
+  DEBUG_PRINT(F("   "));
+  DEBUG_PRINT(F(">Y:"));
+  DEBUG_PRINTLN(accff.y);
+  DEBUG_PRINT(F("   "));
+  DEBUG_PRINT(F(">Z:"));
+  DEBUG_PRINTLN(accff.z);
+  DEBUG_PRINTLN( );
+
+  DEBUG_PRINTLN(F("MPU Gyro Data"));
   DEBUG_PRINT(F(" X:"));
-  DEBUG_PRINTLN(magData.x);
+  DEBUG_PRINT(gyroff.x);
+  DEBUG_PRINT(F("   "));
   DEBUG_PRINT(F(" Y:"));
-  DEBUG_PRINTLN(magData.y);
+  DEBUG_PRINT(gyroff.y);
+  DEBUG_PRINT(F("   "));
+  DEBUG_PRINT(F(" Z:"));
+  DEBUG_PRINTLN(gyroff.z);
+  DEBUG_PRINTLN( );
+
+  DEBUG_PRINTLN(F("MAG Data"));
+  DEBUG_PRINT(F(" X:"));
+  DEBUG_PRINT(magData.x);
+  DEBUG_PRINT(F("   "));
+  DEBUG_PRINT(F(" Y:"));
+  DEBUG_PRINT(magData.y);
+  DEBUG_PRINT(F("   "));
   DEBUG_PRINT(F(" Z:"));
   DEBUG_PRINTLN(magData.z);
   DEBUG_PRINTLN( );*/
@@ -128,7 +185,7 @@ void loop()
   sendFixedDataPacket(0x03, 0x05, 23U, buffersend, sizeof(buffersend));
   managedDelay(500);*/
 
-  Status res = receiveDataPacket(buffersend, sizeof(buffersend));
+  /*Status res = receiveDataPacket(buffersend, sizeof(buffersend));
   for(int i = 0; i < 4; i++){
     converter.binary[i] = buffersend[i];
   }
@@ -157,8 +214,8 @@ void loop()
       DEBUG_PRINTLN(F("CRC Uyusmuyor..."));
     }
   }
-  clearSerialBuffer();
-  managedDelay(500);
+  managedDelay(500);*/
+  managedDelay(40);
 }
 
 // Clock Ayarlama
@@ -284,3 +341,16 @@ uint8_t *paketGonderme(){
   
 }
 */
+
+void motionCalRawPrint(Dof3Data_Int accData, Dof3Data_Int gyroData, Dof3Data_FloatMMC magData){
+  DEBUG_PRINT(F("Raw:"));
+  DEBUG_PRINT(accData.x); DEBUG_PRINT(F(","));
+  DEBUG_PRINT(accData.y); DEBUG_PRINT(F(","));
+  DEBUG_PRINT(accData.z); DEBUG_PRINT(F(","));
+  DEBUG_PRINT(gyroData.x); DEBUG_PRINT(F(","));
+  DEBUG_PRINT(gyroData.y); DEBUG_PRINT(F(","));
+  DEBUG_PRINT(gyroData.z); DEBUG_PRINT(F(","));
+  DEBUG_PRINT(int(magData.x*10)); DEBUG_PRINT(F(","));
+  DEBUG_PRINT(int(magData.y*10)); DEBUG_PRINT(F(","));
+  DEBUG_PRINTLN(int(magData.z*10));
+}

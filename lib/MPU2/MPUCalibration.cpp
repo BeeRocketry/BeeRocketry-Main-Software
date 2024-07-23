@@ -1,8 +1,8 @@
 #include "MPU.h"
 
-float Acc_Resolution = 0;
+float Acc_Resolution = 2048;
 float AccRange = 0;
-float Gyro_Resolution = 0;
+float Gyro_Resolution = 328;
 float GyroRange = 0;
 
 float Acc_bias[3] = {0, 0, 0};
