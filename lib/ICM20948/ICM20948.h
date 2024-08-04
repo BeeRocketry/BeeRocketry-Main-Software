@@ -216,8 +216,8 @@ struct ICM_USERBANK_2{
     ICM_ODR_ALIGNMENT odrAlignment_register; // 0x09
     ICM_ACCEL_INTEL_CTRL accIntelCtrl_register; // 0x12
     ICM_ACCEL_CONFIG_1 accConfig_register; // 0x14
-    uint8_t gyroSampleRate_Value; // 0x00
-    uint16_t accSampleRate_Value; // 11-8 0x10 7-0 0x11
+    uint8_t gyroSampleRate_Value = 6; // 0x00
+    uint16_t accSampleRate_Value = 6; // 11-8 0x10 7-0 0x11
 };
 
 // ICM General Struct

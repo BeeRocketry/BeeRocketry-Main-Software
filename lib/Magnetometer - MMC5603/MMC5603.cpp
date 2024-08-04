@@ -95,8 +95,6 @@ void getHighCalibrated(Dof3Data_IntMAG *magData){
 
 void vectorNormalize(Dof3Data_IntMAG *magData){
     float mag = sqrtf(vectorDotProduct(magData, magData));
-    DEBUG_PRINT(F("Mag: "));
-    DEBUG_PRINTLN(mag);
 
     magData->x /= mag;
     magData->y /= mag;
@@ -116,5 +114,4 @@ void getSoftCalibrateda(Dof3Data_IntMAG *magData){
     magData->x = magSoftCalValue[0][0] * (float)temp[0] + magSoftCalValue[0][1] * (float)temp[1] + magSoftCalValue[0][2] * (float)temp[2];
     magData->y = magSoftCalValue[1][0] * (float)temp[0] + magSoftCalValue[1][1] * (float)temp[1] + magSoftCalValue[1][2] * (float)temp[2];
     magData->z = magSoftCalValue[2][0] * (float)temp[0] + magSoftCalValue[2][1] * (float)temp[1] + magSoftCalValue[2][2] * (float)temp[2];
-    //vectorNormalize(magData);
 }

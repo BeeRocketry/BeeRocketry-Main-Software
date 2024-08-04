@@ -14,6 +14,8 @@
 extern HardwareSerial SeriPort;
 #define DEBUG_PRINTER SeriPort
 
+#define DEBUG_MODE
+
 #ifdef DEBUG_MODE
     #define DEBUG_PRINT(...) {DEBUG_PRINTER.print(__VA_ARGS__); }
     #define DEBUG_PRINTLN(...) {DEBUG_PRINTER.println(__VA_ARGS__); }

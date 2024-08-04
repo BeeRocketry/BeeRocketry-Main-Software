@@ -1,5 +1,7 @@
 #include "MPU.h"
 
+int16_t gyroffset[3] = {0};
+
 // Tüm Register Ayarlamalarını Yapan Fonksiyondur
 MPU_Status mpuInit(struct MPU_REGISTERS *settings){
     I2CWriteByte(MPU_CHIPADR, POWER_MANAGEMENT, 0b10000000);
@@ -67,9 +69,9 @@ MPU_Status normalizeAccGyroTempData(Dof3Data_Int *rawDataAccel, Dof3Data_Int *ra
     accel->y = (float)rawDataAccel->y / Acc_Resolution;
     accel->z = (float)rawDataAccel->z / Acc_Resolution;
 
-    gyro->x = (float)rawDataGyro->x / Gyro_Resolution;
-    gyro->y = (float)rawDataGyro->y / Gyro_Resolution;
-    gyro->z = (float)rawDataGyro->z / Gyro_Resolution;
+    gyro->x = (float)(rawDataGyro->x - gyroffset[0]) / Gyro_Resolution;
+    gyro->y = (float)(rawDataGyro->y - gyroffset[1]) / Gyro_Resolution;
+    gyro->z = (float)(rawDataGyro->z - gyroffset[2]) / Gyro_Resolution;
 
     return MPU_Success;
 }
@@ -229,7 +231,12 @@ MPU_Status GyroCalibration(uint32_t numSample){
     DEBUG_PRINT(F("Z: "));
     DEBUG_PRINT(gyromean[2]);
 
-    while(1){
+    gyroffset[0] = gyromean[0];
+    gyroffset[1] = gyromean[1];
+    gyroffset[2] = gyromean[2];
 
-    }
+    /*while(1){
+
+    }*/
+   return MPU_Success;
 }

@@ -284,5 +284,6 @@ MPU_Status mpuSetAccConfigRegister(struct MPU_REGISTERS *settings);
 MPU_Status mpuSetI2CMasterRegister(struct MPU_REGISTERS *settings);
 MPU_Status mpuSetIntPinRegister(struct MPU_REGISTERS *settings);
 MPU_Status mpuSetUserControlRegister(struct MPU_REGISTERS *settings);
+MPU_Status GyroCalibration(uint32_t numSample);
 
 #endif

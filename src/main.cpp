@@ -7,17 +7,18 @@
 
 #include "debugprinter.h"
 #include <HardwareSerial.h>
-//#include <TinyGPS++.h>
+#include <TinyGPS.h>
 //#include <SD.h>
+#include <ReefwingAHRS.h>
 #include <SPI.h>
 #include "main.h"
 #include "rf.h"
 #include "bmp388.h"
-#include "MMC5603.h"
-#include "MPU.h"
-#include "ICM20948.h"
+#include "BNO055.h"
+//#include "gps.h"
+//#include "MMC5603.h"
 
-void motionCalRawPrint(Dof3Data_Int accData, Dof3Data_Int gyroData, Dof3Data_FloatMMC magData);
+void motionCalRawPrint(BNO_DOF3_Float accData, BNO_DOF3_Float gyroData, BNO_DOF3_Float magData);
 
 // Ana algoritma devresi için genel obje tanımlamaları değişken tanımları
 bool RampaDeger = true;
@@ -48,47 +49,56 @@ union float2binary
 // extern "C" void SystemClock_Config();
 
 HardwareSerial SeriPort(PIN_UART2_RX, PIN_UART2_TX);
+ReefwingAHRS ahrs;
 
-long prevTime;
+long prevTime, prevTime2;
+long Time;
 bool check = 0;
+float maxTotal = 4000;
 
 void setup()
 {
-  MPU_REGISTERS settingsMPU;
   SeriPort.begin(115200);
   DEBUG_PRINTLN(F("Seri Port Baslatildi..."));
   //I2CBegin(PIN_I2C1_SDA, PIN_I2C1_SCL);
   I2CBegin(PB7, PB6); // Bluepill
   DEBUG_PRINTLN(F("I2C Port Baslatildi..."));
   pinMode(LED_BUILTIN, OUTPUT);
-  MMCBegin(true, 1000);
-  DEBUG_PRINTLN(F("MMC Port Baslatildi..."));
-  mpuInit(&settingsMPU);
-  DEBUG_PRINTLN(F("MPU Port Baslatildi..."));
+  BNO_STR_REGISTERS bnoAyar;
+  bnoAyar.registersPage_0.operationMode.operationMode = OPERATIONMODE_AMG;
+  bnoAyar.registersPage_1.accConfig.accBandwidth = ACC_BANDWIDTH_500hz;
+  BNOBegin(bnoAyar);
+  DEBUG_PRINTLN(F("BNO Baslatildi..."));
+  ahrs.begin();
+  DEBUG_PRINTLN(F("AHRS Filtresi Baslatildi..."));
+
+  ahrs.setFusionAlgorithm(SensorFusion::KALMAN);
+  ahrs.setDOF(DOF::DOF_9);
+
   //BMPInit(BMP_OverSampling_8x, BMP_OverSampling_2x, BMP_IIR_OFF, BMP_ODR_40ms);
   //SystemClock_Config();
   //struct ConfigRF rfayarlari;
   //RFBegin(&rfayarlari, 0x03, 0x05, 23U, UARTPARITY_8N1, UARTBAUDRATE_9600, AIRDATARATE_03k, FIXEDMODE, IO_PUSHPULL, WIRELESSWAKEUP_250, FEC_ON, TRANSMISSIONPOWER_30);
   managedDelay(1000);
   digitalWrite(LED_BUILTIN, HIGH);
+  prevTime2 = millis();
   prevTime = millis();
   //uint8_t teeee;
   //I2CReadByte(CHIP_ADR, 0x00, &teeee, TIMEOUT_I2C);
 
   //DEBUG_PRINT(F("CHIP ID: "));
   //DEBUG_PRINTLN(teeee, HEX);
+  //DEBUG_PRINTLN(F("Gyro Kalibrasyon Başladi..."));
+  //BNO_GyroCalibration(1000);
+  //DEBUG_PRINTLN(F("Gyro Kalibrasyon Bitti..."));
 }
 
 void loop()
 {
-  Dof3Data_IntMAG rawData;
-  Dof3Data_FloatMMC magData;
-
-  Dof3Data_Int rawGyro;
-  Dof3Data_Int rawAcc;
-
-  Dof3Data_Float gyroff;
-  Dof3Data_Float accff;
+  float gravityX, gravityY, gravityZ;
+  float roll, pitch, yaw;
+  BNO_DOF3_Float accData, gyroData, magData;
+  SensorData imuData;
   uint8_t tt;
   uint8_t buffersend[13];
   uint8_t crc;
@@ -97,8 +107,8 @@ void loop()
   float2binary converter;
   //uint32_t tempraw, presraw;
   //float press, altitude, temp;
-  if(millis() > prevTime + 2000){
-    prevTime = millis();
+  if(millis() > prevTime2 + 2000){
+    prevTime2 = millis();
     if(check){
       digitalWrite(LED_BUILTIN, HIGH);
       check = 0;
@@ -109,9 +119,65 @@ void loop()
     }
   }
 
-  getRawAccGyroTempData(&rawAcc, &rawGyro, &temp);
-  normalizeAccGyroTempData(&rawAcc, &rawGyro, &temp, &tempFloat, &accff, &gyroff);
-  managedDelay(5);
+  accData = getAccData();
+  gyroData = getGyroData();
+  magData = getMagData();
+
+  imuData.ax = accData.x / 9.81;
+  imuData.ay = accData.y / 9.81;
+  imuData.az = accData.z / 9.81;
+
+  imuData.gx = gyroData.x;
+  imuData.gy = gyroData.y;
+  imuData.gz = gyroData.z;
+
+  imuData.mx = magData.x * 0.01;
+  imuData.my = magData.y * 0.01;
+  imuData.mz = magData.z * 0.01;
+
+  ahrs.setData(imuData);
+  ahrs.update();
+  
+  /*float total = abs(accData.x) + abs(accData.y) + abs(accData.z);
+  if(total < maxTotal){
+    maxTotal = total;
+  }*/
+
+  //motionCalRawPrint(accData, gyroData, magData);
+
+  /*DEBUG_PRINT(accData.x);DEBUG_PRINT(F("   "));
+  DEBUG_PRINT(accData.y);DEBUG_PRINT(F("   "));
+  DEBUG_PRINTLN(accData.z);
+  DEBUG_PRINT(gyroData.x);DEBUG_PRINT(F("   "));
+  DEBUG_PRINT(gyroData.y);DEBUG_PRINT(F("   "));
+  DEBUG_PRINTLN(gyroData.z);
+  DEBUG_PRINT(magData.x);DEBUG_PRINT(F("   "));
+  DEBUG_PRINT(magData.y);DEBUG_PRINT(F("   "));
+  DEBUG_PRINTLN(magData.z);
+  DEBUG_PRINTLN();DEBUG_PRINTLN();DEBUG_PRINTLN();*/
+
+  /*DEBUG_PRINT(F(">AccX:"));DEBUG_PRINTLN(accData.x);
+  DEBUG_PRINT(F(">AccY:"));DEBUG_PRINTLN(accData.y);
+  DEBUG_PRINT(F(">AccZ:"));DEBUG_PRINTLN(accData.z);
+  DEBUG_PRINT(F(">Total:"));DEBUG_PRINTLN(total);
+  DEBUG_PRINT(F(">GyroX:"));DEBUG_PRINTLN(gyroData.x);
+  DEBUG_PRINT(F(">GyroY:"));DEBUG_PRINTLN(gyroData.y);
+  DEBUG_PRINT(F(">GyroZ:"));DEBUG_PRINTLN(gyroData.z);
+  DEBUG_PRINT(F(">MagX:"));DEBUG_PRINTLN(magData.x);
+  DEBUG_PRINT(F(">MagY:"));DEBUG_PRINTLN(magData.y);
+  DEBUG_PRINT(F(">MagZ:"));DEBUG_PRINTLN(magData.z);
+  DEBUG_PRINT(F(">MinTotal:"));DEBUG_PRINTLN(maxTotal);*/
+
+  DEBUG_PRINT(F(">AccX:"));DEBUG_PRINTLN(accData.x);
+  DEBUG_PRINT(F(">AccY:"));DEBUG_PRINTLN(accData.y);
+  DEBUG_PRINT(F(">AccZ:"));DEBUG_PRINTLN(accData.z);
+  DEBUG_PRINT(F(">Pitch:"));DEBUG_PRINTLN(90-ahrs.angles.pitch);
+  DEBUG_PRINT(F(">Roll:"));DEBUG_PRINTLN(ahrs.angles.roll);
+  DEBUG_PRINT(F(">Yaw:"));DEBUG_PRINTLN(ahrs.angles.yaw);
+
+  /*gyroff.x *= RADIAN2DEGREE;
+  gyroff.y *= RADIAN2DEGREE;
+  gyroff.z *= RADIAN2DEGREE;*/
 
   /*BMPGetData(&temp, &press, &altitude);
 
@@ -121,18 +187,20 @@ void loop()
   DEBUG_PRINT(press);
   DEBUG_PRINT(F("   Yukseklik: "));
   DEBUG_PRINTLN(altitude);*/
-  //getMagData(&rawData, &magData);
-  getRawMagData(&rawData);
-  getHighCalibrated(&rawData);
-  getSoftCalibrateda(&rawData);
-  compensatedMagData(rawData, &magData);
 
-  motionCalRawPrint(rawAcc, rawGyro, magData);
+  /*DEBUG_PRINT(F(">Pitch:")); DEBUG_PRINTLN(pitch);// DEBUG_PRINT(F("    "));
+  DEBUG_PRINT(F(">Roll:")); DEBUG_PRINTLN(roll);// DEBUG_PRINT(F("    "));
+  DEBUG_PRINT(F(">Yaw:")); DEBUG_PRINTLN(yaw);// DEBUG_PRINT(F("    "));
+  DEBUG_PRINT(F(">X:")); DEBUG_PRINTLN(gravityX);// DEBUG_PRINT(F("    "));
+  DEBUG_PRINT(F(">Y:")); DEBUG_PRINTLN(gravityY);// DEBUG_PRINT(F("    "));
+  DEBUG_PRINT(F(">Z:")); DEBUG_PRINTLN(gravityZ);*/
+
+  //motionCalRawPrint(rawAcc, rawGyro, magData);
 
   /*DEBUG_PRINT("Counter:");
-  DEBUG_PRINTLN(cnt++);
+  DEBUG_PRINTLN(cnt++);*/
 
-  DEBUG_PRINTLN(F("MPU Acc Data"));
+  /*DEBUG_PRINTLN(F("MPU Acc Data"));
   DEBUG_PRINT(F(">X:"));
   DEBUG_PRINTLN(accff.x);
   DEBUG_PRINT(F("   "));
@@ -215,8 +283,16 @@ void loop()
     }
   }
   managedDelay(500);*/
+  
   managedDelay(40);
 }
+
+
+
+
+
+
+
 
 // Clock Ayarlama
 /*extern "C" void SystemClock_Config()
@@ -342,14 +418,17 @@ uint8_t *paketGonderme(){
 }
 */
 
-void motionCalRawPrint(Dof3Data_Int accData, Dof3Data_Int gyroData, Dof3Data_FloatMMC magData){
+void motionCalRawPrint(BNO_DOF3_Float accData, BNO_DOF3_Float gyroData, BNO_DOF3_Float magData){
+  accData.x = map(accData.x, 0, 156.9064, 0, 8192);
+  accData.y = map(accData.y, 0, 156.9064, 0, 8192);
+  accData.z = map(accData.z, 0, 156.9064, 0, 8192);
   DEBUG_PRINT(F("Raw:"));
-  DEBUG_PRINT(accData.x); DEBUG_PRINT(F(","));
-  DEBUG_PRINT(accData.y); DEBUG_PRINT(F(","));
-  DEBUG_PRINT(accData.z); DEBUG_PRINT(F(","));
-  DEBUG_PRINT(gyroData.x); DEBUG_PRINT(F(","));
-  DEBUG_PRINT(gyroData.y); DEBUG_PRINT(F(","));
-  DEBUG_PRINT(gyroData.z); DEBUG_PRINT(F(","));
+  DEBUG_PRINT(int(accData.x)); DEBUG_PRINT(F(","));
+  DEBUG_PRINT(int(accData.y)); DEBUG_PRINT(F(","));
+  DEBUG_PRINT(int(accData.z)); DEBUG_PRINT(F(","));
+  DEBUG_PRINT(int(gyroData.x)); DEBUG_PRINT(F(","));
+  DEBUG_PRINT(int(gyroData.y)); DEBUG_PRINT(F(","));
+  DEBUG_PRINT(int(gyroData.z)); DEBUG_PRINT(F(","));
   DEBUG_PRINT(int(magData.x*10)); DEBUG_PRINT(F(","));
   DEBUG_PRINT(int(magData.y*10)); DEBUG_PRINT(F(","));
   DEBUG_PRINTLN(int(magData.z*10));

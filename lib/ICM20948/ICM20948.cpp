@@ -395,9 +395,9 @@ void ICM_getNormalizedAccData(ICM_DOF3_INT16 *RawData, ICM_DOF3_FLOAT *AccData){
 }
 
 void ICM_getNormalizedGyroData(ICM_DOF3_INT16 *RawData, ICM_DOF3_FLOAT *GyroData){
-    GyroData->x = (RawData->x - AccOffsets[0]) / Gyro_Resolution;
-    GyroData->y = (RawData->y - AccOffsets[1]) / Gyro_Resolution;
-    GyroData->z = (RawData->z - AccOffsets[2]) / Gyro_Resolution;
+    GyroData->x = (RawData->x - GyroOffsets[0]) / Gyro_Resolution;
+    GyroData->y = (RawData->y - GyroOffsets[1]) / Gyro_Resolution;
+    GyroData->z = (RawData->z - GyroOffsets[2]) / Gyro_Resolution;
 }
 
 void ICM_getRawAccGyroData(ICM_DOF3_INT16 *AccRaw, ICM_DOF3_INT16 *GyroRaw){
