@@ -8,20 +8,28 @@ altında görevlerini yürüten bir proje takımıdır.
     Bu repoda bulunan kodlar BeeRocketry Roket Takımı'nın 2024 Teknofest Roket Yarışması Yüksek  İrtifa  Kategorisi
 için yazılmıştır.
 
-REPO AMACI VE DÜZENİ
---------------------
+REPO AMACI
+----------
     Bu repodaki kodlar temel olarak takımın yarışmada kullanacağı  test  kodlarını  ve  tüm  diğer  yazılmış  özel
 kütüphaneleri içermektedir. AltitudeEstimation kütüphanesi dışında kullanılan tüm özel kütüphaneler takımımız
-tarafından tasarlanmış ve yazılmıştır. Kodların yazan kişiler aşağıda belirtilmiştir.
+tarafından tasarlanmış ve yazılmıştır. 
 
-    Bartu Özcan (https://github.com/baftii) -- Deneme Kodları, BME280, BMP2xx, BMP388, BNO055, Debug Printer, I2C,
+KİŞİLER
+-------
+    Kod bloklarını yazan kişiler aşağıda belirtilmiştir.
+
+    --> Bartu Özcan (https://github.com/baftii) -- Deneme Kodları, BME280, BMP2xx, BMP388, BNO055, Debug Printer, I2C,
                                                ICM20948, Magnetometer - MMC5603, MPU9250, RF
-    Cemanur Adıgüzel                         -- GPS
-    Juan Gallostra Acín       -- AltitudeEstimation
+
+    --> Cemanur Adıgüzel                         -- GPS
+
+    --> Juan Gallostra Acín       -- AltitudeEstimation
                                  (https://github.com/juangallostra/AltitudeEstimation/commits?author=juangallostra)
 
 
-    Aynı zamanda reponun çalışması için gerekli olan ön koşul kütüphaneler aşağıda belirtilmiştir.
+ÖN KOŞUL KÜTÜPHANELER
+---------------------
+    Reponun çalışması için gerekli olan ön koşul kütüphaneler aşağıda belirtilmiştir.
         -- Arduino.h
         -- Wire.h
         -- HardwareSerial.h
@@ -30,6 +38,8 @@ tarafından tasarlanmış ve yazılmıştır. Kodların yazan kişiler aşağıd
         -- SPI.h
         -- TinyGPSPlus.h
 
+KLASÖR DÜZENİ
+-------------
     Klasör düzeni aşağıda belirtilmiştir. Belirtilen dosyalar dışında kalan dosyalar PlatformIO tarafından eklenen
 otomatik dosyalardır. Düzen kısmında klasörlerin temel olarak içeriklerinden bahsedilmiştir. Detaylı bilgiler için
 klasörlerin sahip olduğu README dosyalarına bakılabilir. Ayrıca özel kütüphanelerinde detaylı bilgisi ayrı repolar
