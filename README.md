@@ -37,34 +37,38 @@ Klasör düzeni aşağıda belirtilmiştir. Belirtilen dosyalar dışında kalan
 - **Deneme Kodları**  
   Bu klasör, yarışmanın AHR aşamasında kullanılmak üzere yazılmış tüm test kodlarını içermektedir.
   - **Arayüz Testi**  
-    Arayüz testine ait kodlar.
     - Gönderici Devre
       - `gonderici.cpp`
+
     - Yer İstasyonu
       - `yeristasyonu.cpp`
+
     - `README.md`
 
   - **Fonksiyonellik Aviyonik Testi**  
-    Aviyonik testine ait kodlar.
     - Aviyonik Testi
+
       - `aviyonik.cpp`
     - Fonksiyonellik
+
       - `Fonksiyonellik_Alici.cpp`
       - `Fonksiyonellik_Verici.cpp`
+
     - `README.md`
 
   - **Haberleşme Testi**  
-    Haberleşme testine ait kodlar.
     - Ana Kart
       - `Anakart.cpp`
+
     - Görev Yükü
       - `Gorevyuku.cpp`
+
     - Yer İstasyonu
       - `Yeristasyonu.cpp`
+
     - `README.md`
 
   - **Kurtarma Sistem Testi**  
-    Kurtarma testine ait kodlar.
     - `AnaAviyonik.cpp`
     - `KurtarmaSistemi.cpp`
     - `README.md`
@@ -123,7 +127,7 @@ Klasör düzeni aşağıda belirtilmiştir. Belirtilen dosyalar dışında kalan
   - RF
     - `rf.cpp`
     - `rf.h`
-    
+
   - `README.md`
 
 - `README.md`
