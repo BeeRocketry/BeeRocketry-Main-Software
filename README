@@ -1,191 +1,114 @@
-    Bu repo BeeRocketry Roket Takımı'nın ana aviyonik sistem, görev yükü ve yer  istasyonu  sistemlerinin  kodlarını
-ve kullanılan kütüphanelerin kodlarını içermektedir.
+# BeeRocketry Roket Takımı
 
-BEEROCKETRY ROKET TAKIMI KİMDİR?
---------------------------------
-    BeeRocketry Roket Takımı, Çankaya Üniversitesi öğrencilerden oluşan ve Mühendislik ve  Teknoloji  Topluluğu'nun
-altında görevlerini yürüten bir proje takımıdır.
-    Bu repoda bulunan kodlar BeeRocketry Roket Takımı'nın 2024 Teknofest Roket Yarışması Yüksek  İrtifa  Kategorisi
-için yazılmıştır.
+Bu repo, BeeRocketry Roket Takımı'nın ana aviyonik sistem, görev yükü ve yer istasyonu sistemlerinin kodlarını ve kullanılan kütüphanelerin kodlarını içermektedir.
 
-REPO AMACI
-----------
-    Bu repodaki kodlar temel olarak takımın yarışmada kullanacağı  test  kodlarını  ve  tüm  diğer  yazılmış  özel
-kütüphaneleri içermektedir. AltitudeEstimation kütüphanesi dışında kullanılan tüm özel kütüphaneler takımımız
-tarafından tasarlanmış ve yazılmıştır. 
+## BeeRocketry Roket Takımı Kimdir?
+BeeRocketry Roket Takımı, Çankaya Üniversitesi öğrencilerinden oluşan ve Mühendislik ve Teknoloji Topluluğu altında görevlerini yürüten bir proje takımıdır. Bu repoda bulunan kodlar, BeeRocketry Roket Takımı'nın 2024 Teknofest Roket Yarışması Yüksek İrtifa Kategorisi için yazılmıştır.
 
-KİŞİLER
--------
-    Kod bloklarını yazan kişiler aşağıda belirtilmiştir.
+## Repo Amacı
+Bu repodaki kodlar, takımın yarışmada kullanacağı test kodlarını ve tüm diğer özel kütüphaneleri içermektedir. AltitudeEstimation kütüphanesi dışında kullanılan tüm özel kütüphaneler takımımız tarafından tasarlanmış ve yazılmıştır.
 
-    --> Bartu Özcan (https://github.com/baftii) -- Deneme Kodları, BME280, BMP2xx, BMP388, BNO055, Debug Printer, I2C,
-                                               ICM20948, Magnetometer - MMC5603, MPU9250, RF
+## Katkıda Bulunanlar
+Kod bloklarını yazan kişiler aşağıda belirtilmiştir:
 
-    --> Cemanur Adıgüzel                        -- GPS
+- **Bartu Özcan** ([GitHub Profili](https://github.com/baftii))  
+  Deneme Kodları, BME280, BMP2xx, BMP388, BNO055, Debug Printer, I2C, ICM20948, Magnetometer - MMC5603, MPU9250, RF
+- **Cemanur Adıgüzel**  
+  GPS
+- **Juan Gallostra Acín** ([AltitudeEstimation](https://github.com/juangallostra/AltitudeEstimation/commits?author=juangallostra))  
+  AltitudeEstimation
 
-    --> Juan Gallostra Acín       -- AltitudeEstimation
-        (https://github.com/juangallostra/AltitudeEstimation/commits?author=juangallostra)
+## Ön Koşul Kütüphaneler
+Reponun çalışması için gerekli olan ön koşul kütüphaneler:
 
+- Arduino.h
+- Wire.h
+- HardwareSerial.h
+- Reefwing_AHRS.h
+- Reefwing_imutypes.h
+- SPI.h
+- TinyGPSPlus.h
 
-ÖN KOŞUL KÜTÜPHANELER
----------------------
-    Reponun çalışması için gerekli olan ön koşul kütüphaneler aşağıda belirtilmiştir.
-        -- Arduino.h
-        -- Wire.h
-        -- HardwareSerial.h
-        -- Reefwing_AHRS.h
-        -- Reefwing_imutypes.h
-        -- SPI.h
-        -- TinyGPSPlus.h
+## Klasör Düzeni
+Klasör düzeni aşağıda belirtilmiştir. Belirtilen dosyalar dışında kalan dosyalar, PlatformIO tarafından eklenen otomatik dosyalardır. Klasörlerin temel içerikleri hakkında bilgi verilmiştir; detaylı bilgiler için klasörlerde bulunan README dosyalarına bakılabilir. Ayrıca, özel kütüphanelerin detaylı bilgisi ayrı repolar halinde paylaşılıp buraya link eklemesi zamanla yapılacaktır.
 
-KLASÖR DÜZENİ
--------------
-    Klasör düzeni aşağıda belirtilmiştir. Belirtilen dosyalar dışında kalan dosyalar PlatformIO tarafından eklenen
-otomatik dosyalardır. Düzen kısmında klasörlerin temel olarak içeriklerinden bahsedilmiştir. Detaylı bilgiler için
-klasörlerin sahip olduğu README dosyalarına bakılabilir. Ayrıca özel kütüphanelerinde detaylı bilgisi ayrı repolar
-halinde paylaşılıp buraya link eklemesi zamanla yapılacaktır.
+### BeeRocketry Ana Yazılım
 
-    BeeRocketry Ana Yazilim
-    |
-    |
-    |-- Deneme Kodları                                     : Bu  klasör  üzerinden  yarışmanın  AHR  Aşamasında
-    |    |                                                   kullanılmak  üzere  yazılmış  tüm  test  kodlarına
-    |    |                                                   ulaşabilirsiniz.
-    |    |
-    |    |-- Arayüz Testi                                  : Bu klasör arayüz testine ait kodları içermektedir.
-    |    |    |
-    |    |    |-- Gönderici Devre
-    |    |    |    |
-    |    |    |    |-- gonderici.cpp
-    |    |    |
-    |    |    |-- Yer İstasyonu
-    |    |    |    |
-    |    |    |    |-- yeristasyonu.cpp
-    |    |    |
-    |    |    |-- README
-    |    |
-    |    |-- Fonksiyonellik Aviyonik Testi                 : Bu klasör aviyonik testine ait kodları içermektedir.
-    |    |    |
-    |    |    |-- Aviyonik Testi
-    |    |    |    |
-    |    |    |    |-- aviyonik.cpp
-    |    |    |
-    |    |    |-- Fonksiyonellik
-    |    |    |    |
-    |    |    |    |-- Fonksiyonellik_Alici.cpp
-    |    |    |    |
-    |    |    |    |-- Fonksiyonellik_Verici.cpp
-    |    |    |
-    |    |    |-- README
-    |    |
-    |    |-- Haberlesme Testi                              : Bu klasör haberleşme testine ait kodları içermektedir.
-    |    |    |
-    |    |    |-- Ana Kart
-    |    |    |    |
-    |    |    |    |-- Anakart.cpp
-    |    |    |
-    |    |    |-- Görev Yükü
-    |    |    |    |
-    |    |    |    |-- Gorevyuku.cpp
-    |    |    |
-    |    |    |-- Yer İstasyonu
-    |    |    |    |
-    |    |    |    |-- Yeristasyonu.cpp
-    |    |    |
-    |    |    |-- README
-    |    |
-    |    |-- Kurtarma Sistem Testi                        : Bu klasör kurtarma testine ait kodları içermektedir.
-    |         |
-    |         |-- AnaAviyonik.cpp
-    |         |
-    |         |-- KurtarmaSistemi.cpp
-    |         |
-    |         |-- README
-    |
-    |-- lib                                               : Bu klasör tüm özel kütüphaneleri saklamaktadır.
-    |    |
-    |    |-- AltitudeEstimation
-    |    |    |
-    |    |    |-- algebra.cpp
-    |    |    |
-    |    |    |-- algebra.h
-    |    |    |
-    |    |    |-- altitude.cpp
-    |    |    |
-    |    |    |-- altitude.h
-    |    |    |
-    |    |    |-- filters.cpp
-    |    |    |
-    |    |    |-- filters.h
-    |    |
-    |    |-- BME280
-    |    |    |
-    |    |    |-- bme280.cpp
-    |    |    |
-    |    |    |-- bme280.h
-    |    |
-    |    |-- BMP2xx
-    |    |    |
-    |    |    |-- bmp2xx.cpp
-    |    |    |
-    |    |    |-- bmp2xx.h
-    |    |
-    |    |-- BMP388
-    |    |    |
-    |    |    |-- bmp388.cpp
-    |    |    |
-    |    |    |-- bmp388.h
-    |    |
-    |    |-- BNO055
-    |    |    |
-    |    |    |-- BNO055.cpp
-    |    |    |
-    |    |    |-- BNO055.h
-    |    |
-    |    |-- Debug Printer
-    |    |    |
-    |    |    |-- debugprinter.h
-    |    |
-    |    |-- GPS
-    |    |    |
-    |    |    |-- gps.cpp
-    |    |    |
-    |    |    |-- gps.h
-    |    |
-    |    |-- I2C
-    |    |    |
-    |    |    |-- I2C.cpp
-    |    |    |
-    |    |    |-- I2C.h
-    |    |
-    |    |-- ICM20948
-    |    |    |
-    |    |    |-- ICM20948.cpp
-    |    |    |
-    |    |    |-- ICM20948.h
-    |    |
-    |    |-- Magnetometer - MMC5603
-    |    |    |
-    |    |    |-- MMC5603.cpp
-    |    |    |
-    |    |    |-- MMC5603.h
-    |    |
-    |    |-- MPU9250
-    |    |    |
-    |    |    |-- Mahony.cpp
-    |    |    |
-    |    |    |-- Mahony.h
-    |    |    |
-    |    |    |-- MPU9250.cpp
-    |    |    |
-    |    |    |-- MPU9250.h
-    |    |
-    |    |-- RF
-    |    |    |
-    |    |    |-- rf.cpp
-    |    |    |
-    |    |    |-- rf.h
-    |    |
-    |    |-- README
-    |
-    |-- README
+- **Deneme Kodları**  
+  Bu klasör, yarışmanın AHR aşamasında kullanılmak üzere yazılmış tüm test kodlarını içermektedir.
+  - **Arayüz Testi**  
+    Arayüz testine ait kodlar.
+    - Gönderici Devre
+      - `gonderici.cpp`
+    - Yer İstasyonu
+      - `yeristasyonu.cpp`
+    - `README`
+  - **Fonksiyonellik Aviyonik Testi**  
+    Aviyonik testine ait kodlar.
+    - Aviyonik Testi
+      - `aviyonik.cpp`
+    - Fonksiyonellik
+      - `Fonksiyonellik_Alici.cpp`
+      - `Fonksiyonellik_Verici.cpp`
+    - `README`
+  - **Haberleşme Testi**  
+    Haberleşme testine ait kodlar.
+    - Ana Kart
+      - `Anakart.cpp`
+    - Görev Yükü
+      - `Gorevyuku.cpp`
+    - Yer İstasyonu
+      - `Yeristasyonu.cpp`
+    - `README`
+  - **Kurtarma Sistem Testi**  
+    Kurtarma testine ait kodlar.
+    - `AnaAviyonik.cpp`
+    - `KurtarmaSistemi.cpp`
+    - `README`
+
+- **lib**  
+  Bu klasör, tüm özel kütüphaneleri saklamaktadır.
+  - AltitudeEstimation
+    - `algebra.cpp`
+    - `algebra.h`
+    - `altitude.cpp`
+    - `altitude.h`
+    - `filters.cpp`
+    - `filters.h`
+  - BME280
+    - `bme280.cpp`
+    - `bme280.h`
+  - BMP2xx
+    - `bmp2xx.cpp`
+    - `bmp2xx.h`
+  - BMP388
+    - `bmp388.cpp`
+    - `bmp388.h`
+  - BNO055
+    - `BNO055.cpp`
+    - `BNO055.h`
+  - Debug Printer
+    - `debugprinter.h`
+  - GPS
+    - `gps.cpp`
+    - `gps.h`
+  - I2C
+    - `I2C.cpp`
+    - `I2C.h`
+  - ICM20948
+    - `ICM20948.cpp`
+    - `ICM20948.h`
+  - Magnetometer - MMC5603
+    - `MMC5603.cpp`
+    - `MMC5603.h`
+  - MPU9250
+    - `Mahony.cpp`
+    - `Mahony.h`
+    - `MPU9250.cpp`
+    - `MPU9250.h`
+  - RF
+    - `rf.cpp`
+    - `rf.h`
+  - `README`
+
+- `README.md`
