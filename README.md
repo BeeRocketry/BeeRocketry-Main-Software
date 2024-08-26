@@ -42,7 +42,7 @@ Klasör düzeni aşağıda belirtilmiştir. Belirtilen dosyalar dışında kalan
       - `gonderici.cpp`
     - Yer İstasyonu
       - `yeristasyonu.cpp`
-    - `README`
+    - `README.md`
   - **Fonksiyonellik Aviyonik Testi**  
     Aviyonik testine ait kodlar.
     - Aviyonik Testi
@@ -50,7 +50,7 @@ Klasör düzeni aşağıda belirtilmiştir. Belirtilen dosyalar dışında kalan
     - Fonksiyonellik
       - `Fonksiyonellik_Alici.cpp`
       - `Fonksiyonellik_Verici.cpp`
-    - `README`
+    - `README.md`
   - **Haberleşme Testi**  
     Haberleşme testine ait kodlar.
     - Ana Kart
@@ -59,12 +59,12 @@ Klasör düzeni aşağıda belirtilmiştir. Belirtilen dosyalar dışında kalan
       - `Gorevyuku.cpp`
     - Yer İstasyonu
       - `Yeristasyonu.cpp`
-    - `README`
+    - `README.md`
   - **Kurtarma Sistem Testi**  
     Kurtarma testine ait kodlar.
     - `AnaAviyonik.cpp`
     - `KurtarmaSistemi.cpp`
-    - `README`
+    - `README.md`
 
 - **lib**  
   Bu klasör, tüm özel kütüphaneleri saklamaktadır.
@@ -109,6 +109,6 @@ Klasör düzeni aşağıda belirtilmiştir. Belirtilen dosyalar dışında kalan
   - RF
     - `rf.cpp`
     - `rf.h`
-  - `README`
+  - `README.md`
 
 - `README.md`
