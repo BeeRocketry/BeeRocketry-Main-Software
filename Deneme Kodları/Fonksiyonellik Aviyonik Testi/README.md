@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="../../BeeRocketry.png" alt="BeeRocketry Logo" width="300"/>
+  <img src="../../BeeRocketry.png" alt="BeeRocketry Logo" width="150"/>
 </p>
 
 # FONKSİYONELLİK TESTİ NEDİR?
