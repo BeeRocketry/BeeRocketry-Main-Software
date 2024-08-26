@@ -1,19 +1,11 @@
-Kurtarma Sistem Testi - Yer İstasyonu Kod Bloğu
+<p align="center">
+  <img src="BeeRocketry.png" alt="BeeRocketry Logo" width="300"/>
+</p>
 
-KURTARMA SİSTEM TESTİ NEDİR?
-----------------------------
-    Kurtarma sistem testi roketin sıkı geçirilmiş olan gövde bölümlerinin başarı ile ayrılabildiğini kanıtlayan testtir.
-Gövde bölümlerinin ayrılması roketten rokete değişmektedir. BeeRocketry takımının roketi  Sıcak Gaz  Üretici  ile  barut
-kullanarak basınç oluşturur ve sıkı geçen gövdelerin ayrılmasını sağlar. Roketimiz temelde 3 adet gövdeden oluşmaktadır.
-Bunlar sırasıyla motor blok, aviyonik blok ve burun konisidir. 2 adet gövde ayıracak sıcak gaz üreticimiz bulunmaktadır.
-Bunlardan ilki tepe noktasında tetiklenecek ve burun konisi ile aviyonik bloğunu ayıracak sıcak gaz üreticisiyken diğeri
-motor blok ve aviyonik bloğunu ayıracak sıcak gaz üreticisidir.
+# ÖZET
+Bu klasör, takımımızın haberleşme testi sürecinde üç ana birimimizin (Ana Aviyonik, Görev Yükü, Yer İstasyonu) kullanacağı kod bloklarını içermektedir.
 
-ANA AVİYONİK GENEL ÖZET
------------------------
-    Testte bu sistemlerimizin çalışırlığını kanıtlamak üzere 2 adet sistem çalıştırılacaktır. Bunlardan biri tetiklemeyi
-yapacak olan ana aviyonik sistem diğeri ise ana aviyonik sisteme tetikleme emrini RF üzerinden iletecek yer istasyonudur
-Ana aviyonik sistem düzenli olarak RF üzerinden gelecek olan veri paketlerini CRC-8 ile  kontrol  edecek  ve  sonrasında
-Pakette bulunan tanımlayıcı karakterleri kontrol edecektir. Eğer gelen karakter 'a' ise  main  paraşütü,  eğer  'b'  ise
-apogee paraşütü tetikleyecektir. Yer istasyonu ise seri porttan sürekli olarak gelecek karakterleri  kontrol  edecek  ve
-istenen harfte veri gelince ana aviyonik sistemin sahip olduğu adres ve frekansa veri paketini yollayacaktır.
+## HABERLEŞME TESTİ NEDİR?
+Haberleşme testi, yer istasyonları, görev yükü ve ana aviyonik sistem arasındaki haberleşmenin en az 5 kilometre öteden gerçekleşebildiğini kanıtlayan bir testtir. Test içeriği olarak haberleşmede RF modülü kullanılacaktır ve gönderilen veri paketinde GPS verilerinin bulunması zorunludur.
+
+Test gereği görev yükü ve ana aviyonik sistemimiz GPS verilerini toplayacak ve yer istasyonunun sahip olduğu adres ve frekansa bu verileri göndereceklerdir. Yer istasyonumuz ise düzenli olarak gelen veri paketlerini paketlerin bulundurduğu CRC-8 byte'ı ile kontrol edecektir. Ayrıca, veri paketinin bulundurduğu tanımlama karakteri ile verinin hangi gönderici tarafından gönderildiğini teyit edecek ve buna göre değişkenleri güncelleyecektir.
