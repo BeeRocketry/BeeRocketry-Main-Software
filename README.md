@@ -43,6 +43,7 @@ Klasör düzeni aşağıda belirtilmiştir. Belirtilen dosyalar dışında kalan
     - Yer İstasyonu
       - `yeristasyonu.cpp`
     - `README.md`
+
   - **Fonksiyonellik Aviyonik Testi**  
     Aviyonik testine ait kodlar.
     - Aviyonik Testi
@@ -51,6 +52,7 @@ Klasör düzeni aşağıda belirtilmiştir. Belirtilen dosyalar dışında kalan
       - `Fonksiyonellik_Alici.cpp`
       - `Fonksiyonellik_Verici.cpp`
     - `README.md`
+
   - **Haberleşme Testi**  
     Haberleşme testine ait kodlar.
     - Ana Kart
@@ -60,6 +62,7 @@ Klasör düzeni aşağıda belirtilmiştir. Belirtilen dosyalar dışında kalan
     - Yer İstasyonu
       - `Yeristasyonu.cpp`
     - `README.md`
+
   - **Kurtarma Sistem Testi**  
     Kurtarma testine ait kodlar.
     - `AnaAviyonik.cpp`
@@ -75,40 +78,52 @@ Klasör düzeni aşağıda belirtilmiştir. Belirtilen dosyalar dışında kalan
     - `altitude.h`
     - `filters.cpp`
     - `filters.h`
+
   - BME280
     - `bme280.cpp`
     - `bme280.h`
+
   - BMP2xx
     - `bmp2xx.cpp`
     - `bmp2xx.h`
+
   - BMP388
     - `bmp388.cpp`
     - `bmp388.h`
+
   - BNO055
     - `BNO055.cpp`
     - `BNO055.h`
+
   - Debug Printer
     - `debugprinter.h`
+
   - GPS
     - `gps.cpp`
     - `gps.h`
+
   - I2C
     - `I2C.cpp`
     - `I2C.h`
+
   - ICM20948
     - `ICM20948.cpp`
     - `ICM20948.h`
+
   - Magnetometer - MMC5603
     - `MMC5603.cpp`
     - `MMC5603.h`
+
   - MPU9250
     - `Mahony.cpp`
     - `Mahony.h`
     - `MPU9250.cpp`
     - `MPU9250.h`
+
   - RF
     - `rf.cpp`
     - `rf.h`
+    
   - `README.md`
 
 - `README.md`
