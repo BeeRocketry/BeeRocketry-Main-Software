@@ -1,3 +1,7 @@
+<p align="center">
+  <img src="BeeRocketry.png" alt="BeeRocketry Logo" width="300"/>
+</p>
+
 # BeeRocketry Roket Takımı
 
 Bu repo, BeeRocketry Roket Takımı'nın ana aviyonik sistem, görev yükü ve yer istasyonu sistemlerinin kodlarını ve kullanılan kütüphanelerin kodlarını içermektedir.
