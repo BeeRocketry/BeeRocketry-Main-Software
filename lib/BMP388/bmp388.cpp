@@ -11,18 +11,18 @@ void BMPInit(BMP_Oversampling pressureOversampling, BMP_Oversampling temperature
     setReset();
     DEBUG_PRINTLN("BMP388 Resetlendi...");
 
+    delay(20);
+
     getCalibrationData();
     DEBUG_PRINTLN(F("Kalibrasyon değerleri başariyla alindi..."));
 
     setOSR(pressureOversampling, temperatureOversampling);
-    setODR(odrSampling);
-
-    DEBUG_PRINTLN(F("Oversampling ve ODR başariyla ayarlandi..."));
-
     setControl(iirSampling);
-
+    setODR(odrSampling);
     setFIFOConfig1(BMP_OFF);
     setPowerControl(BMP_ON, BMP_ON, BMP_NormalMode);
+    
+    DEBUG_PRINTLN(F("Oversampling ve ODR başariyla ayarlandi..."));
 
     DEBUG_PRINTLN(F("BMP388 Sicaklik ve Basinc Olcumu Baslatildi..."));
 }
@@ -33,7 +33,7 @@ void getCalibrationData(){
 
     uint8_t buffer[21];
 
-    I2CReadBytes(CHIP_ADR, REG_TEMP_T1_LSB, buffer, 21, TIMEOUT_I2C);
+    I2CReadBytes(BMP_CHIPADR, REG_TEMP_T1_LSB, buffer, 21, TIMEOUT_I2C);
 
     CalibDataPointer->T1 = ((uint16_t)buffer[1] << 8) | buffer[0];
     CalibDataPointer->T2 = ((uint16_t)buffer[3] << 8) | buffer[2];
@@ -78,7 +78,7 @@ void setFIFOConfig1(BMP_ONOFF fifoMode){
     uint8_t temp = 0;
 
     temp = ((uint8_t)fifoMode) | temp;
-    I2CWriteByte(CHIP_ADR, REG_FIFO_CONFIG1, temp);
+    I2CWriteByte(BMP_CHIPADR, REG_FIFO_CONFIG1, temp);
 }
 
 /* 
@@ -91,7 +91,7 @@ void setPowerControl(BMP_ONOFF pressureEnable, BMP_ONOFF tempEnable, BMP_Mode bm
     uint8_t temp = 0;
 
     temp |= ((uint8_t)bmpMode << 4) | ((uint8_t)tempEnable << 1) | (uint8_t)pressureEnable;
-    I2CWriteByte(CHIP_ADR, REG_PWR_CTRL, temp);
+    I2CWriteByte(BMP_CHIPADR, REG_PWR_CTRL, temp);
 }
 
 /*
@@ -103,7 +103,7 @@ void setOSR(BMP_Oversampling pressureOversampling, BMP_Oversampling tempOversamp
     uint8_t temp = 0;
 
     temp |= ((uint8_t)tempOversampling << 3) | (uint8_t)pressureOversampling;
-    I2CWriteByte(CHIP_ADR, REG_OSR, temp);
+    I2CWriteByte(BMP_CHIPADR, REG_OSR, temp);
 }
 
 /*
@@ -114,7 +114,7 @@ void setControl(BMP_IIR_Sampling iirSampling){
     uint8_t temp = 0;
 
     temp |= ((uint8_t)iirSampling << 1);
-    I2CWriteByte(CHIP_ADR, REG_CONFIG, temp);
+    I2CWriteByte(BMP_CHIPADR, REG_CONFIG, temp);
 }
 
 /*
@@ -125,11 +125,11 @@ void setODR(BMP_ODR odrRate){
     uint8_t temp = 0;
 
     temp |= (uint8_t)odrRate;
-    I2CWriteByte(CHIP_ADR, REG_ODR, temp);
+    I2CWriteByte(BMP_CHIPADR, REG_ODR, temp);
 }
 
 void setReset(){
-    I2CWriteByte(CHIP_ADR, REG_CMD, 0xB6);
+    I2CWriteByte(BMP_CHIPADR, REG_CMD, 0xB6);
     delay(20);
 }
 
@@ -137,7 +137,7 @@ void getRawData(uint32_t *rawpress, uint32_t *rawtemperature){
     uint8_t buffer[6];
     uint32_t temppres = 0, temptemp = 0;
 
-    I2CReadBytes(CHIP_ADR, REG_PRESS_XLSB, buffer, 6, TIMEOUT_I2C);
+    I2CReadBytes(BMP_CHIPADR, REG_PRESS_XLSB, buffer, 6, TIMEOUT_I2C);
 
     temppres = ((uint32_t)buffer[2] << 16) | ((uint32_t)buffer[1] << 8) | buffer[0];
     temptemp = ((uint32_t)buffer[5] << 16) | ((uint32_t)buffer[4] << 8) | buffer[3];
@@ -208,4 +208,11 @@ void BMPGetData(float *temperature, float *pressure, float *altitude){
     *temperature = realTemperature;
     *pressure = realPressure;
     *altitude = realAltitude;
+}
+
+uint8_t getBMPChipID(){
+    uint8_t reg = 0;
+
+    I2CReadByte(BMP_CHIPADR, 0x00, &reg, TIMEOUT_I2C);
+    return reg;
 }

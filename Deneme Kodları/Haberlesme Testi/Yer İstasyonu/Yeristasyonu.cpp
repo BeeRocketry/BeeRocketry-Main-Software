@@ -53,7 +53,6 @@ FEC                         --  Aktif
 #include "debugprinter.h"
 #include <HardwareSerial.h>
 #include "gps.h"
-#include "main.h"
 #include "rf.h"
 
 #define UartRXPini PA10

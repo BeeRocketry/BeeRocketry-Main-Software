@@ -3,12 +3,11 @@
 
 #include <Arduino.h>
 #include "debugprinter.h"
-#include <TinyGPS.h>
+#include <TinyGPSPlus.h>
 
 extern HardwareSerial GPSSeriPort;
 
-static void smartdelay(unsigned long ms);
-void getGPSData(float *enlem, float *boylam, float *irtifa = (float *)0, float *hiz = (float *)0);
-void gpsDatas(float *enlem, float *boylam, int *irtifa);
+static void smartDelay(unsigned long ms);
+void getGPSData(float *enlem, float *boylam, float *irtifa, int16_t *satellite);
 
 #endif

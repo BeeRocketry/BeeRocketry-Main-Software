@@ -2,7 +2,7 @@
 
 #include "rf.h"
 
-HardwareSerial SerialRF(RF_RX, RF_TX);
+extern HardwareSerial SerialRF;
 
 /*
 ---------------------------------------------------------------
@@ -79,8 +79,10 @@ Status waitAUX(unsigned long timeout){
             DEBUG_PRINTLN(F("RF_AUX zaman aşimina uğradi."));
             return E32_Timeout;
         }
-        managedDelay(20);
+        managedDelay(5);
     }
+
+    managedDelay(10);
 
     return E32_Success;
 }
@@ -114,7 +116,8 @@ Status RFBegin(struct ConfigRF *getConfs, uint8_t HighAddress, uint8_t LowAddres
     struct ConfigRF confs;
 
     DEBUG_PRINTLN(F("RF Baslatiliyor..."));
-    managedDelay(1000);
+    SerialRF.begin(9600);
+    managedDelay(500);
     
     setTransmissionMode(&confs, transmode);
     setFECSettings(&confs, fecmode);
@@ -131,18 +134,13 @@ Status RFBegin(struct ConfigRF *getConfs, uint8_t HighAddress, uint8_t LowAddres
     DEBUG_PRINTLN(F("Struct ayarlamalari yapildi..."));
     DEBUG_PRINTLN(F("Pin ayarlamalari Baslaniyor..."));
 
-    managedDelay(1000);
+    managedDelay(500);
 
     pinMode(RF_AUX, INPUT);
     pinMode(RF_M0, OUTPUT);
     pinMode(RF_M1, OUTPUT);
 
     DEBUG_PRINTLN(F("Pin cikislari ayarlandi..."));
-
-    if(setSerialBaudRateBegin(confs) == E32_FailureMode){
-        DEBUG_PRINTLN(F("Seri port başlangici yapilamadi..."));
-        return E32_FailureMode;
-    }
 
     digitalWrite(RF_M0, LOW);
     digitalWrite(RF_M1, LOW);
@@ -154,7 +152,7 @@ Status RFBegin(struct ConfigRF *getConfs, uint8_t HighAddress, uint8_t LowAddres
 
     DEBUG_PRINTLN(F("RF Ayarlamalari Baslaniyor..."));
 
-    managedDelay(2000);
+    managedDelay(500);
     Status res = setSettings(confs);
     if(res == E32_Timeout){
         DEBUG_PRINTLN(F("RF Ayarlamalari zaman asimina ugradi..."));
@@ -165,13 +163,36 @@ Status RFBegin(struct ConfigRF *getConfs, uint8_t HighAddress, uint8_t LowAddres
     }
 
     DEBUG_PRINTLN(F("Ayarlar aliniyor..."));
-    managedDelay(3000);
+    managedDelay(500);
 
-    getSettings(getConfs);
+    res = getSettings(getConfs);
 
-    DEBUG_PRINTLN(F("RF Begin Fonksiyonu basarili bir sekilde tamamlandi..."));
+    if(res != E32_Success){
+        DEBUG_PRINTLN(F("Ayar Alma Basarili Bir sekilde Tamamlanamadi..."));
+        return E32_BrokenGetSet;
+    }
 
     clearSerialBuffer();
+
+    managedDelay(10);
+    SerialRF.end();
+    managedDelay(5);
+
+    res = setSerialBaudRateBegin(confs);
+
+    if(res == E32_FailureMode){
+        DEBUG_PRINTLN(F("Seri port başlangici yapilamadi..."));
+        return E32_FailureMode;
+    }
+
+    clearSerialBuffer();
+
+    managedDelay(2000);
+
+    if(res == E32_Success){
+        DEBUG_PRINTLN(F("RF Begin Fonksiyonu basarili bir sekilde tamamlandi..."));
+    }
+
     return E32_Success;
 }
 
@@ -313,7 +334,6 @@ Status getSettings(struct ConfigRF *confs){
     clearSerialBuffer();
     uint8_t SpedByte = 0, OptionByte = 0;
     uint8_t MesArr[6], sendpack[3];
-    uint8_t receivedCRC;
 
     if(waitAUX(TIMEOUT_AUX_RESPOND) == E32_Timeout){
         return E32_Timeout;
@@ -407,29 +427,31 @@ Status receiveSingleData(uint8_t *data){
     }
 
     *data = SerialRF.read();
+    clearSerialBuffer();
     DEBUG_PRINTLN(F("Veri Alindi..."));
     return E32_Success;
 }
 
 Status receiveDataPacket(uint8_t *data, size_t size){
-    if(waitAUX(TIMEOUT_AUX_RESPOND) == E32_Timeout){
-        return E32_Timeout;
-    }
-
     unsigned long t = millis();
     while(SerialRF.available() < size){
         if(SerialRF.available() == 0 && millis() - t > 100){
-            DEBUG_PRINTLN(F("Herhangi bir Veri Paketi gelmedi..."));
+            //DEBUG_PRINTLN(F("Herhangi bir Veri Paketi gelmedi..."));
             return E32_NoMessage;
         }
         else if(millis() - t > 1000){
-            DEBUG_PRINTLN(F("Veri okuma zaman asimina ugradi..."));
+            //DEBUG_PRINTLN(F("Veri okuma zaman asimina ugradi..."));
             return E32_Timeout;
         }
         managedDelay(20);
     }
 
     SerialRF.readBytes(data, size);
+
+    if(waitAUX(TIMEOUT_AUX_RESPOND) == E32_Timeout){
+        return E32_Timeout;
+    }
+
     clearSerialBuffer();
     return E32_Success;
 }
@@ -446,6 +468,7 @@ Status sendFixedSingleData(uint8_t AddressHigh, uint8_t AddressLow, uint8_t Chan
     }
 
     SerialRF.write((uint8_t *)packet, sizeof(packet) / sizeof(packet[0]));
+    clearSerialBuffer();
 
     return E32_Success;
 }
@@ -456,36 +479,32 @@ Status sendTransparentSingleData(uint8_t data){
     }
 
     SerialRF.write(data);
+    clearSerialBuffer();
 
     return E32_Success;
 }
 
 Status sendFixedDataPacket(uint8_t AddressHigh, uint8_t AddressLow, uint8_t Channel, uint8_t *data, size_t size){
-    size_t maxDataSize = MAX_TX_BUFFER_SIZE - 4;
-    size_t totalPacket = (size + maxDataSize - 1) / maxDataSize ;
-
-    for(size_t i = 0; i < totalPacket; i++){
-        size_t offset = i * maxDataSize;
-        size_t packetSize = (size - offset > maxDataSize) ? maxDataSize : (size - offset);
-
-        uint8_t packet[packetSize + 4];
-
-        packet[0] = AddressHigh;
-        packet[1] = AddressLow;
-        packet[2] = Channel;
-        memcpy(&packet[3], &data[offset], packetSize);
-
-        uint8_t crc = calculateCRC8(&packet[3], packetSize);
-        packet[packetSize + 4] = crc;
-
-        if(waitAUX(TIMEOUT_AUX_RESPOND) == E32_Timeout){
-            return E32_Timeout;
-        }
-
-        SerialRF.write((uint8_t *)packet, sizeof(packet) / sizeof(packet[0]));
-
-        managedDelay(10);
+    if(size > MAX_TX_BUFFER_SIZE - 3){
+        return E32_BigPacket;
     }
+
+    uint8_t packet[size + 3];
+
+    packet[0] = AddressHigh;
+    packet[1] = AddressLow;
+    packet[2] = Channel;
+    memcpy(&packet[3], data, size);
+
+    SerialRF.write((uint8_t *)packet, sizeof(packet));
+
+    if(waitAUX(TIMEOUT_AUX_RESPOND) == E32_Timeout){
+        return E32_Timeout;
+    }
+
+    managedDelay(5);
+
+    clearSerialBuffer();
 
     return E32_Success;
 }
@@ -495,28 +514,25 @@ Status sendBroadcastDataPacket(uint8_t Channel, uint8_t *data, size_t size){
 }
 
 Status sendTransparentDataPacket(uint8_t *data, size_t size){
-    size_t maxDataSize = MAX_TX_BUFFER_SIZE - 1;
-    size_t totalPacket = (size + maxDataSize - 1) / maxDataSize;
-
-    for(size_t i = 0; i < totalPacket; i++){
-        size_t offset = i * maxDataSize;
-        size_t packetSize = (size - offset > maxDataSize) ? maxDataSize : (size - offset);
-
-        uint8_t packet[packetSize + 1];
-
-        memcpy(packet, &data[offset], packetSize);
-
-        uint8_t crc = calculateCRC8(packet, packetSize);
-        packet[packetSize] = crc;
-
-        if(waitAUX(TIMEOUT_AUX_RESPOND) == E32_Timeout){
-            return E32_Timeout;
-        }
-
-        SerialRF.write((uint8_t *)packet, sizeof(packet) / sizeof(packet[0]));
-
-        managedDelay(10);
+    if(size > MAX_TX_BUFFER_SIZE - 1){
+        return E32_BigPacket;
     }
+
+    uint8_t packet[size + 1];
+    memcpy(packet, data, size);
+
+    uint8_t crc = calculateCRC8(packet, size);
+    packet[(sizeof(data) / sizeof(data[0]))] = crc;
+
+    SerialRF.write((uint8_t *)packet, sizeof(packet));
+
+    if(waitAUX(TIMEOUT_AUX_RESPOND) == E32_Timeout){
+        return E32_Timeout;
+    }
+
+    managedDelay(5);
+
+    clearSerialBuffer();
 
     return E32_Success;
 }
@@ -810,7 +826,6 @@ void managedDelay(unsigned long timeout){
     }
 
     while((millis()-t) < timeout){
-        yield();
     }
 }
 

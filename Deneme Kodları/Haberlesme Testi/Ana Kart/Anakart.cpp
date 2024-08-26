@@ -25,7 +25,7 @@ KULLANILAN MODÜLLER
 -------------------
 RF Modülü         -- EByte E32-433T30D
 GPS Modülü        -- U-Blok NEO-6M-V2
-Mikro Denetleyici -- STM32 Blackpill (STM32F411CE)
+Mikro Denetleyici -- STM32 Blackpill (STM32F411RE)
 
 
 RF MODÜLÜ ÇİP AYARLARI
@@ -53,7 +53,6 @@ FEC                         --  Aktif
 #include "debugprinter.h"
 #include <HardwareSerial.h>
 #include "gps.h"
-#include "main.h"
 #include "rf.h"
 
 #define UartRXPini PA10

@@ -13,7 +13,7 @@ void bmpInit(void)
 
 uint8_t bmpgetDeviceID(void){
     uint8_t temp;
-    I2CReadByte(CHIP_ADR, REG_ID, &temp, TIMEOUT_I2C);
+    I2CReadByte(BMP_CHIPADR, REG_ID, &temp, TIMEOUT_I2C);
 
     return temp;
 }
@@ -22,14 +22,14 @@ void setCtrlReg(byte oversamplingTemp, byte oversamplingPressure, byte powerMode
 {
     byte temp = 0;
     temp = (oversamplingTemp << 5) | (oversamplingPressure << 2) | powerMode;
-    I2CWriteByte(CHIP_ADR, REG_CTRL_MEAS, temp);
+    I2CWriteByte(BMP_CHIPADR, REG_CTRL_MEAS, temp);
 }
 
 void setConfig(byte tStandby, byte filterSet, byte spi3w)
 {
     byte temp = 0;
     temp = (tStandby << 5) | (filterSet << 2) | spi3w;
-    I2CWriteByte(CHIP_ADR, REG_CONFIG, temp);
+    I2CWriteByte(BMP_CHIPADR, REG_CONFIG, temp);
 }
 
 // Raw Sıcaklık Değerini Alır
@@ -38,7 +38,7 @@ int32_t getRawTemp(void)
     int i = 0;
     int error = 5;
     uint8_t temporary[3] = {0};
-    I2CReadBytes(CHIP_ADR, REG_TEMP_XLSB, temporary, 3, TIMEOUT_I2C);
+    I2CReadBytes(BMP_CHIPADR, REG_TEMP_XLSB, temporary, 3, TIMEOUT_I2C);
 
     int32_t temp = 0;
     temp = (temporary[2] << 12) | (temporary[1] << 4) | (temporary[0] >> 4);
@@ -68,7 +68,7 @@ void getTempCalb(unsigned short *T1, short *T2, short *T3)
 {
     uint8_t buff[6];
 
-    I2CReadBytes(CHIP_ADR, REG_T1_LSB, buff, 6, TIMEOUT_I2C);
+    I2CReadBytes(BMP_CHIPADR, REG_T1_LSB, buff, 6, TIMEOUT_I2C);
 
     *T1 = (buff[1] << 8) | buff[0];
     *T2 = (buff[3] << 8) | buff[2];
@@ -78,7 +78,7 @@ void getTempCalb(unsigned short *T1, short *T2, short *T3)
 int32_t getRawPres(void)
 {
     uint8_t temporary[3];
-    I2CReadBytes(CHIP_ADR, REG_PRESS_XLSB, temporary, 3, TIMEOUT_I2C);
+    I2CReadBytes(BMP_CHIPADR, REG_PRESS_XLSB, temporary, 3, TIMEOUT_I2C);
 
     int32_t press = 0;
     press = (temporary[2] << 12) | (temporary[1] << 4) | (temporary[0] >> 4);
@@ -129,7 +129,7 @@ void getPresCalb(unsigned short *P1, short *P2, short *P3, short *P4, short *P5,
 {
     uint8_t buff[18];
 
-    I2CReadBytes(CHIP_ADR, REG_P1_LSB, buff, 18, TIMEOUT_I2C);
+    I2CReadBytes(BMP_CHIPADR, REG_P1_LSB, buff, 18, TIMEOUT_I2C);
 
     for (int i = 0; i < 9; i++)
     {
@@ -172,7 +172,7 @@ void getPresCalb(unsigned short *P1, short *P2, short *P3, short *P4, short *P5,
 void getRaws(int32_t *pres, int32_t *temp)
 {
     uint8_t temporary[6];
-    I2CReadBytes(CHIP_ADR, REG_PRESS_MSB, temporary, 6, TIMEOUT_I2C);
+    I2CReadBytes(BMP_CHIPADR, REG_PRESS_MSB, temporary, 6, TIMEOUT_I2C);
 
     *pres = (temporary[0] << 12) | (temporary[1] << 4) | (temporary[0] >> 4);
     *temp = (temporary[3] << 12) | (temporary[4] << 4) | (temporary[5] >> 4);

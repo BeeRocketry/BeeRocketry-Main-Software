@@ -11,7 +11,7 @@
 #define REG_FIFO_CONFIG2 0x18
 #define REG_PWR_CTRL 0x1B
 #define REG_OSR 0x1C
-#define CHIP_ADR 0x76
+#define BMP_CHIPADR 0x76
 #define REG_WhoAmI 0x00
 #define REG_STATUS 0x03
 #define REG_ODR 0x1D
@@ -161,5 +161,6 @@ float compensatedTempData(uint32_t rawTemperature);
 float compensatedPressData(uint32_t rawPressure);
 float convertPress2Altitude(float pressure);
 void BMPGetData(float *temperature, float *pressure, float *altitude);
+uint8_t getBMPChipID();
 
 #endif

@@ -26,11 +26,15 @@
 #define RF_M1 PA6*/
 
 /* Blackpill Receiver*/
-#define RF_TX PA9
-#define RF_RX PA10
-#define RF_AUX PB2
-#define RF_M0 PB0
-#define RF_M1 PB1
+#define RF_TX PB6
+#define RF_RX PB7
+//#define RF_AUX PC8
+//#define RF_M0 PA11
+//#define RF_M1 PA12
+
+#define RF_AUX PB0
+#define RF_M0 PB1
+#define RF_M1 PB2
 
 
 extern HardwareSerial SerialRF;
@@ -66,6 +70,8 @@ typedef enum Error_Status{
     E32_CrcBroken,
     E32_FailureMode,
     E32_NoMessage,
+    E32_BigPacket,
+    E32_BrokenGetSet,
 } Status;
 
 /*
