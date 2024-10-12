@@ -121,7 +121,7 @@ uint8_t durum = 0;
 void setup(){
     SeriPort.begin(UartBaudRate);
     DEBUG_PRINTLN(F("Seri Port Baslatildi..."));
-    RFBegin(&rfayarlari, RFHighAdresi, RFLowAdresi, RFKanal, UARTPARITY_8N1, UARTBAUDRATE_9600,
+    RFBegin(RFHighAdresi, RFLowAdresi, RFKanal, UARTPARITY_8N1, UARTBAUDRATE_9600,
             AIRDATARATE_03k, FIXEDMODE, IO_PUSHPULL, WIRELESSWAKEUP_250, FEC_ON, TRANSMISSIONPOWER_30);
     sure = millis();
 }

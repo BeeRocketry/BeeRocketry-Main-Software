@@ -87,6 +87,70 @@ Status waitAUX(unsigned long timeout){
     return E32_Success;
 }
 
+float airDataRateEnum2Value(RF_AIR_DATA dataRate){
+    if(dataRate == AIRDATARATE_03k){
+        return 0.3;
+    }
+    else if(dataRate == AIRDATARATE_12k){
+        return 1.2;
+    }
+    else if(dataRate == AIRDATARATE_24k){
+        return 2.4;
+    }
+    else if(dataRate == AIRDATARATE_48k){
+        return 4.8;
+    }
+    else if(dataRate == AIRDATARATE_96k){
+        return 9.6;
+    }
+    else if(dataRate == AIRDATARATE_192k){
+        return 19.2;
+    }
+    else{
+        return -1;
+    }
+}
+
+long UARTRateEnum2Value(RF_UART_BAUD dataRate){
+    if(dataRate == UARTBAUDRATE_1200){
+        return 1200;
+    }
+    else if(dataRate == UARTBAUDRATE_2400){
+        return 2400;
+    }
+    else if(dataRate == UARTBAUDRATE_4800){
+        return 4800;
+    }
+    else if(dataRate == UARTBAUDRATE_9600){
+        return 9600;
+    }
+    else if(dataRate == UARTBAUDRATE_19200){
+        return 19200;
+    }
+    else if(dataRate == UARTBAUDRATE_38400){
+        return 38400;
+    }
+    else if(dataRate == UARTBAUDRATE_57600){
+        return 57600;
+    }
+    else if(dataRate == UARTBAUDRATE_115200){
+        return 115200;
+    }
+}
+
+time_t calculatePacketSendTime(size_t packetSize){
+    uint16_t packetBitSize = packetSize * 8;
+    time_t packetTime = 0;
+
+    // Air Data Rate Time
+    packetTime += (1000 * packetBitSize) / (airDataRateEnum2Value((RF_AIR_DATA)RFGlobalSettings.RFSped.AirDataRate) * 1000);
+
+    // UART Time
+    packetTime += (1000 * packetBitSize) / UARTRateEnum2Value((RF_UART_BAUD)RFGlobalSettings.RFSped.UARTBaud);
+
+    return packetTime;
+}
+
 /*
 ------------------------
  RF Cihazı Başlangıç Ayarları Fonksiyonu
@@ -112,7 +176,7 @@ Status waitAUX(unsigned long timeout){
         E32_Success --> İşlem Başarılı
 ------------------------
 */
-Status RFBegin(struct ConfigRF *getConfs, uint8_t HighAddress, uint8_t LowAddress, uint8_t channel, RF_UART_PARITY parity, RF_UART_BAUD baud, RF_AIR_DATA airdata, RF_TRANS_MODE transmode, RF_IO_MODE IOmode, RF_WIRELESS wirelesswake, RF_FEC fecmode, RF_TRANS_POWER transpower){
+Status RFBegin(uint8_t HighAddress, uint8_t LowAddress, uint8_t channel, RF_UART_PARITY parity, RF_UART_BAUD baud, RF_AIR_DATA airdata, RF_TRANS_MODE transmode, RF_IO_MODE IOmode, RF_WIRELESS wirelesswake, RF_FEC fecmode, RF_TRANS_POWER transpower){
     struct ConfigRF confs;
 
     DEBUG_PRINTLN(F("RF Baslatiliyor..."));
@@ -165,7 +229,7 @@ Status RFBegin(struct ConfigRF *getConfs, uint8_t HighAddress, uint8_t LowAddres
     DEBUG_PRINTLN(F("Ayarlar aliniyor..."));
     managedDelay(500);
 
-    res = getSettings(getConfs);
+    res = getSettings(&RFGlobalSettings);
 
     if(res != E32_Success){
         DEBUG_PRINTLN(F("Ayar Alma Basarili Bir sekilde Tamamlanamadi..."));
@@ -456,12 +520,23 @@ Status receiveDataPacket(uint8_t *data, size_t size){
     return E32_Success;
 }
 
-Status sendFixedSingleData(uint8_t AddressHigh, uint8_t AddressLow, uint8_t Channel, uint8_t data){
+Status sendFixedSingleData(uint8_t AddressHigh, uint8_t AddressLow, uint8_t Channel, uint8_t data, time_t delay_ms){
     uint8_t packet[4];
     packet[0] = AddressHigh;
     packet[1] = AddressLow;
     packet[2] = Channel;
     packet[3] = data;
+
+    time_t packageTime = calculatePacketSendTime(sizeof(packet));
+
+    if(delay_ms >= packageTime){
+        DEBUG_PRINTLN(F("Delay duration is not enough to send this data packet !!!"));
+        DEBUG_PRINTLN(F("Try to increase UART or Air Data Rate. Or decrease data packet size."));
+        DEBUG_PRINTLN(F("Working in this config can cause unwanted delays and can cause a damage on device..."));
+        DEBUG_PRINT(F("Delay Time : "));DEBUG_PRINT(delay_ms);DEBUG_PRINT(F("   "));
+        DEBUG_PRINT(F("Package Transfer Time : "));DEBUG_PRINTLN(packageTime);
+        return E32_NoPackageTime;
+    }
 
     if(waitAUX(TIMEOUT_AUX_RESPOND) == E32_Timeout){
         return E32_Timeout;
@@ -473,9 +548,20 @@ Status sendFixedSingleData(uint8_t AddressHigh, uint8_t AddressLow, uint8_t Chan
     return E32_Success;
 }
 
-Status sendTransparentSingleData(uint8_t data){
+Status sendTransparentSingleData(uint8_t data, time_t delay_ms){
     if(waitAUX(TIMEOUT_AUX_RESPOND) == E32_Timeout){
         return E32_Timeout;
+    }
+
+    time_t packageTime = calculatePacketSendTime(sizeof(data));
+
+    if(delay_ms >= packageTime){
+        DEBUG_PRINTLN(F("Delay duration is not enough to send this data packet !!!"));
+        DEBUG_PRINTLN(F("Try to increase UART or Air Data Rate. Or decrease data packet size."));
+        DEBUG_PRINTLN(F("Working in this config can cause unwanted delays and can cause a damage on device..."));
+        DEBUG_PRINT(F("Delay Time : "));DEBUG_PRINT(delay_ms);DEBUG_PRINT(F("   "));
+        DEBUG_PRINT(F("Package Transfer Time : "));DEBUG_PRINTLN(packageTime);
+        return E32_NoPackageTime;
     }
 
     SerialRF.write(data);
@@ -484,7 +570,7 @@ Status sendTransparentSingleData(uint8_t data){
     return E32_Success;
 }
 
-Status sendFixedDataPacket(uint8_t AddressHigh, uint8_t AddressLow, uint8_t Channel, uint8_t *data, size_t size){
+Status sendFixedDataPacket(uint8_t AddressHigh, uint8_t AddressLow, uint8_t Channel, uint8_t *data, size_t size, time_t delay_ms){
     if(size > MAX_TX_BUFFER_SIZE - 3){
         return E32_BigPacket;
     }
@@ -495,6 +581,17 @@ Status sendFixedDataPacket(uint8_t AddressHigh, uint8_t AddressLow, uint8_t Chan
     packet[1] = AddressLow;
     packet[2] = Channel;
     memcpy(&packet[3], data, size);
+
+    time_t packageTime = calculatePacketSendTime(sizeof(packet));
+
+    if(delay_ms >= packageTime){
+        DEBUG_PRINTLN(F("Delay duration is not enough to send this data packet !!!"));
+        DEBUG_PRINTLN(F("Try to increase UART or Air Data Rate. Or decrease data packet size."));
+        DEBUG_PRINTLN(F("Working in this config can cause unwanted delays and can cause a damage on device..."));
+        DEBUG_PRINT(F("Delay Time : "));DEBUG_PRINT(delay_ms);DEBUG_PRINT(F("   "));
+        DEBUG_PRINT(F("Package Transfer Time : "));DEBUG_PRINTLN(packageTime);
+        return E32_NoPackageTime;
+    }
 
     SerialRF.write((uint8_t *)packet, sizeof(packet));
 
@@ -509,11 +606,11 @@ Status sendFixedDataPacket(uint8_t AddressHigh, uint8_t AddressLow, uint8_t Chan
     return E32_Success;
 }
 
-Status sendBroadcastDataPacket(uint8_t Channel, uint8_t *data, size_t size){
-    return sendFixedDataPacket(0x00, 0x00, Channel, data, size);
+Status sendBroadcastDataPacket(uint8_t Channel, uint8_t *data, size_t size, time_t delay_ms){
+    return sendFixedDataPacket(0x00, 0x00, Channel, data, size, delay_ms);
 }
 
-Status sendTransparentDataPacket(uint8_t *data, size_t size){
+Status sendTransparentDataPacket(uint8_t *data, size_t size, time_t delay_ms){
     if(size > MAX_TX_BUFFER_SIZE - 1){
         return E32_BigPacket;
     }
@@ -523,6 +620,17 @@ Status sendTransparentDataPacket(uint8_t *data, size_t size){
 
     uint8_t crc = calculateCRC8(packet, size);
     packet[(sizeof(data) / sizeof(data[0]))] = crc;
+
+    time_t packageTime = calculatePacketSendTime(size);
+
+    if(delay_ms >= packageTime){
+        DEBUG_PRINTLN(F("Delay duration is not enough to send this data packet !!!"));
+        DEBUG_PRINTLN(F("Try to increase UART or Air Data Rate. Or decrease data packet size."));
+        DEBUG_PRINTLN(F("Working in this config can cause unwanted delays and can cause a damage on device..."));
+        DEBUG_PRINT(F("Delay Time : "));DEBUG_PRINT(delay_ms);DEBUG_PRINT(F("   "));
+        DEBUG_PRINT(F("Package Transfer Time : "));DEBUG_PRINTLN(packageTime);
+        return E32_NoPackageTime;
+    }
 
     SerialRF.write((uint8_t *)packet, sizeof(packet));
 

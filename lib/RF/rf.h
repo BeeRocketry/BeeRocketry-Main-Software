@@ -72,6 +72,7 @@ typedef enum Error_Status{
     E32_NoMessage,
     E32_BigPacket,
     E32_BrokenGetSet,
+    E32_NoPackageTime,
 } Status;
 
 /*
@@ -183,16 +184,16 @@ struct ConfigRF{
 uint8_t calculateCRC8(const uint8_t *data, size_t length);
 void clearSerialBuffer();
 Status waitAUX(unsigned long timeout);
-Status RFBegin(struct ConfigRF *getConfs, uint8_t HighAddress, uint8_t LowAddress, uint8_t channel, RF_UART_PARITY parity, RF_UART_BAUD baud, RF_AIR_DATA airdata, RF_TRANS_MODE transmode, RF_IO_MODE IOmode, RF_WIRELESS wirelesswake, RF_FEC fecmode, RF_TRANS_POWER transpower);
+Status RFBegin(uint8_t HighAddress, uint8_t LowAddress, uint8_t channel, RF_UART_PARITY parity, RF_UART_BAUD baud, RF_AIR_DATA airdata, RF_TRANS_MODE transmode, RF_IO_MODE IOmode, RF_WIRELESS wirelesswake, RF_FEC fecmode, RF_TRANS_POWER transpower);
 Status setSettings(struct ConfigRF confs);
 Status getSettings(struct ConfigRF *confs);
 Status receiveSingleData(uint8_t *data);
 Status receiveDataPacket(uint8_t *data, size_t size);
-Status sendFixedSingleData(uint8_t AddressHigh, uint8_t AddressLow, uint8_t Channel, uint8_t data);
-Status sendTransparentSingleData(uint8_t data);
-Status sendFixedDataPacket(uint8_t AddressHigh, uint8_t AddressLow, uint8_t Channel, uint8_t *data, size_t size);
-Status sendBroadcastDataPacket(uint8_t Channel, uint8_t *data, size_t size);
-Status sendTransparentDataPacket(uint8_t *data, size_t size);
+Status sendFixedSingleData(uint8_t AddressHigh, uint8_t AddressLow, uint8_t Channel, uint8_t data, time_t delay_ms);
+Status sendTransparentSingleData(uint8_t data, time_t delay_ms);
+Status sendFixedDataPacket(uint8_t AddressHigh, uint8_t AddressLow, uint8_t Channel, uint8_t *data, size_t size, time_t delay_ms);
+Status sendBroadcastDataPacket(uint8_t Channel, uint8_t *data, size_t size, time_t delay_ms);
+Status sendTransparentDataPacket(uint8_t *data, size_t size, time_t delay_ms);
 Status setTransmissionMode(struct ConfigRF *config, uint8_t Mode);
 Status setAddresses(struct ConfigRF *config, uint8_t AddHigh, uint8_t AddLow);
 Status setChannel(struct ConfigRF *config, uint8_t channel);
@@ -214,5 +215,15 @@ String getAirData(byte airdata);
 String getUARTParity(byte uartparity);
 String getUARTBaudRate(byte uartbaud);
 void managedDelay(unsigned long timeout);
+float airDataRateEnum2Value(RF_AIR_DATA dataRate);
+long UARTRateEnum2Value(RF_UART_BAUD dataRate);
+time_t calculatePacketSendTime(size_t packetSize);
+
+/*
+-----------------------
+Global Variable Tanımları
+-----------------------
+*/
+struct ConfigRF RFGlobalSettings;
 
 #endif

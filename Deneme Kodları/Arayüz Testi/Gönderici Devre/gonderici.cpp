@@ -81,6 +81,7 @@ FEC                         --  Aktif
 #define RFGondericiKanal 23U
 
 #define BeklemeSuresi 150
+#define RFBeklemeSuresi 1500
 
 HardwareSerial SeriPort(UartRXPini, UartTXPini);
 HardwareSerial SerialRF(RFUartRXPini, RFUartTXPini);
@@ -135,7 +136,7 @@ void setup(){
     GPSSeriPort.begin(GPSBaudRate);
     DEBUG_PRINTLN(F("GPS Port Baslatildi..."));
 
-    RFBegin(&rfayarlari, RFHighAdresi, RFLowAdresi, RFKanal, UARTPARITY_8N1, UARTBAUDRATE_9600,
+    RFBegin(RFHighAdresi, RFLowAdresi, RFKanal, UARTPARITY_8N1, UARTBAUDRATE_9600,
             AIRDATARATE_03k, FIXEDMODE, IO_PUSHPULL, WIRELESSWAKEUP_250, FEC_ON, TRANSMISSIONPOWER_30);
 
     I2CBegin(I2CSDAPini, I2CSCLPini);
@@ -215,16 +216,20 @@ void loop(){
 
     printDebug();
 
-    if(millis() - sureRF > 1500){
+    if(millis() - sureRF > RFBeklemeSuresi){
         converter();
         printConverter();
-        if(sendFixedDataPacket(RFGondericiHighAdresi, RFGondericiLowAdresi, RFGondericiKanal, MessageBuffer, sizeof(MessageBuffer)) != E32_Success){
+        Status ret = sendFixedDataPacket(RFGondericiHighAdresi, RFGondericiLowAdresi, RFGondericiKanal, MessageBuffer, sizeof(MessageBuffer), RFBeklemeSuresi);
+        if(ret == E32_Timeout){
             DEBUG_PRINTLN(F("Paket Gönderilemedi..."));
+        }
+        else if(ret == E32_NoPackageTime){
+            exit(E32_NoPackageTime);
         }
         sureRF = millis();
     }
-    
-    delay(BeklemeSuresi);
+
+    managedDelay(BeklemeSuresi);
 }
 
 void converter(){
