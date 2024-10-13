@@ -17,7 +17,7 @@ Kod bloklarını yazan kişiler aşağıda belirtilmiştir:
 
 - **Bartu Özcan** ([GitHub Profili](https://github.com/baftii))  
   Deneme Kodları, BME280, BMP2xx, BMP388, BNO055, Debug Printer, I2C, ICM20948, Magnetometer - MMC5603, MPU9250, RF
-- **Cemanur Adıgüzel**  
+- **Cemanur Adıgüzel**  ([GitHub Profili](https://github.com/Cemanuradiguzel))  
   GPS
 - **Juan Gallostra Acín** ([AltitudeEstimation](https://github.com/juangallostra/AltitudeEstimation/commits?author=juangallostra))  
   AltitudeEstimation
